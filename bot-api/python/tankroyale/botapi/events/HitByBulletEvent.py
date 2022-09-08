@@ -1,4 +1,4 @@
-from tankroyale.botapi import BulletState
+from tankroyale.botapi.schemas.python import BulletState
 import BotEvent
 
 

@@ -1,6 +1,6 @@
-from tankroyale.botapi import BulletState
-from tankroyale.botapi import BotState
-import BotEvent
+from tankroyale.botapi.schemas.python import BulletState
+from tankroyale.botapi.schemas.python import BotState
+from tankroyale.botapi.events.BotEvent  import BotEvent
 
 
 class TickEvent(BotEvent):

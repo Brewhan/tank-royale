@@ -1,22 +1,17 @@
-import json
-from tankroyale.botapi.BulletState import BulletState
-from tankroyale.botapi.Color import Color
-import warlock
+from tankroyale.botapi.schemas.python.BulletState import BulletState
+from tankroyale.botapi.schemas.python.Color import Color
 import typing
 
 
 class BulletStateMapper:
-    with open('../../schemas/bullet-state.json') as j:
-        SchemaBulletState = warlock.model_factory(json.load(j))
-        j.close()
 
     @typing.overload
-    def map(self: list[SchemaBulletState]):
+    def map(self: list[BulletState]):
         bullet_state_set = set()
         for i in self:
             bullet_state_set.add(i)
 
-    def map(self: SchemaBulletState):
+    def map(self: BulletState):
         return BulletState(bullet_id=self.bulledId,
                            owner_id=self.ownerId,
                            power=self.power,

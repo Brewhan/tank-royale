@@ -1,14 +1,8 @@
-import json
-import warlock
-from tankroyale.botapi import BotState
+from tankroyale.botapi.schemas.python.BotState import BotState
 
 
 class BotStateMapper:
-    with open('../../schemas/bot-state.json') as j:
-        SchemaBotState = warlock.model_factory(json.load(j))
-        j.close()
-
-    def map(self: SchemaBotState):
+    def map(self: BotState):
         return BotState(energy=self.energy,
                         x=self.x,
                         y=self.y,
@@ -31,6 +25,8 @@ class BotStateMapper:
                         )
 
 
-print(BotStateMapper.bot_state(
-    BotStateMapper.BotState(energy=10, x=10.1, y=10.2, direction=170, gunDirection=40, radarDirection=50,
-                            radarSweep=20, speed=10, turnRate=20, gunTurnRate=10, radarTurnRate=20, gunHeat=40)))
+print(BotStateMapper.map(
+    BotState(energy=10, x=10.1, y=10.2, direction=170, gunDirection=40, radarDirection=50,
+             radarSweep=20, speed=10, turnRate=20, gunTurnRate=10, radarTurnRate=20, gunHeat=40, bodyColor="FFFFFF",
+             turretColor="FFFFFF", radarColor="FFFFFF", bulletColor="FFFFFF", scanColor="FFFFFF", tracksColor="FFFFFF",
+             gunColor="FFFFFF")))
