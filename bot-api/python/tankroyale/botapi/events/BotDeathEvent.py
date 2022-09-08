@@ -6,7 +6,7 @@ class BotDeathEvent(BotEvent):
 
     def __init__(self, turn_number: int, victim_id: int):
         super(turn_number)
-        self.victim_id = victim_id
+        self.victimId = victim_id
 
     def victim_id(self):
         return self.victim_id
