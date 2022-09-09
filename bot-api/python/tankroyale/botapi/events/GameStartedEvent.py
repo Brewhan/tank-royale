@@ -1,4 +1,4 @@
-from tankroyale.botapi.events import GameSetup
+from tankroyale.botapi.schemas.python import GameSetup
 
 
 class GameStartedEvent:

@@ -1,4 +1,4 @@
-from tankroyale.botapi import BotResults
+from tankroyale.botapi.schemas.python import BotResults
 
 
 class GameEndedEvent:

@@ -1,7 +1,7 @@
 from typing import Optional
 from dataclasses import dataclass
-from tankroyale.schemas.python.Message import Message
-from tankroyale.schemas.python.InitialPosition import InitialPosition
+from tankroyale.botapi.schemas.python.Message import Message
+from tankroyale.botapi.schemas.python.InitialPosition import InitialPosition
 
 
 @dataclass(kw_only=True)
