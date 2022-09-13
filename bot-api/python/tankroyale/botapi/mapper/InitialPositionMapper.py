@@ -1,4 +1,4 @@
-from tankroyale.botapi.schemas.python.InitialPosition import InitialPosition
+from tankroyale.botapi.schemas.InitialPosition import InitialPosition
 
 
 class InitialPositionMapper:

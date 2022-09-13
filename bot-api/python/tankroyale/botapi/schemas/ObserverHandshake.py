@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from tankroyale.botapi.schemas.python.Message import Message
+from tankroyale.botapi.schemas.Message import Message
 
 
 @dataclass

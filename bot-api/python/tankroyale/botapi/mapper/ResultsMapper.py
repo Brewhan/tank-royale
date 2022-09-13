@@ -1,5 +1,5 @@
-from tankroyale.botapi.schemas.python.BotResults import BotResults
-from tankroyale.botapi.schemas.python.BotResultsForBot import BotResultsForBot
+from tankroyale.botapi.schemas.BotResults import BotResults
+from tankroyale.botapi.schemas.BotResultsForBot import BotResultsForBot
 
 
 class ResultsMapper:

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
-from tankroyale.botapi.schemas.python.Message import Message
-from tankroyale.botapi.schemas.python.BotAddress import BotAddress
+from tankroyale.botapi.schemas.Message import Message
+from tankroyale.botapi.schemas.BotAddress import BotAddress
 
 
 @dataclass

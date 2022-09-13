@@ -1,5 +1,5 @@
-from tankroyale.botapi.schemas.python.BotState import BotState
-from tankroyale.botapi.schemas.python.TickEventForBot import TickEventForBot
+from tankroyale.botapi.schemas.BotState import BotState
+from tankroyale.botapi.schemas.TickEventForBot import TickEventForBot
 from tankroyale.botapi.events.TickEvent import TickEvent
 from tankroyale.botapi.mapper.BotStateMapper import BotStateMapper
 

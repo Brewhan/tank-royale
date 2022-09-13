@@ -1,4 +1,4 @@
-from tankroyale.botapi.schemas.python.GameSetup import GameSetup
+from tankroyale.botapi.schemas.GameSetup import GameSetup
 
 
 class GameSetupMapper:

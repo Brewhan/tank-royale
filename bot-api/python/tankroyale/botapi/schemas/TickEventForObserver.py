@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from tankroyale.botapi.schemas.python.Event import Event
-from tankroyale.botapi.schemas.python.BotStateWithId import BotStateWithId
-from tankroyale.botapi.schemas.python.BulletState import BulletState
+from tankroyale.botapi.schemas.Event import Event
+from tankroyale.botapi.schemas.BotStateWithId import BotStateWithId
+from tankroyale.botapi.schemas.BulletState import BulletState
 from tankroyale.botapi.events.BotEvent import BotEvent
 
 

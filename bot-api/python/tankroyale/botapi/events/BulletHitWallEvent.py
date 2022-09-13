@@ -1,4 +1,4 @@
-from tankroyale.botapi.schemas.python.BulletState import BulletState
+from tankroyale.botapi.schemas.BulletState import BulletState
 
 
 class BulletHitWallEvent:

@@ -1,5 +1,4 @@
-from tankroyale.botapi.schemas.python import BulletState
-from tankroyale.botapi.schemas.python import BotState
+from tankroyale.botapi.schemas import BulletState, BotState
 from tankroyale.botapi.events.BotEvent  import BotEvent
 
 

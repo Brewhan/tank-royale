@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from tankroyale.botapi.schemas.python.Message import Message
-from tankroyale.botapi.schemas.python.Participant import Participant
+from tankroyale.botapi.schemas.Message import Message
+from tankroyale.botapi.schemas.Participant import Participant
 
 
 @dataclass

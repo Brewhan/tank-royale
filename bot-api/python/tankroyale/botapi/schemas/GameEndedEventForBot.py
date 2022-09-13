@@ -1,4 +1,4 @@
-from tankroyale.botapi.schemas.python.Message import Message
+from tankroyale.botapi.schemas.Message import Message
 from dataclasses import dataclass
 
 

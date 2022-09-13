@@ -1,5 +1,5 @@
-from tankroyale.botapi.schemas.python.BulletState import BulletState
-from tankroyale.botapi.schemas.python.Color import Color
+from tankroyale.botapi.schemas.BulletState import BulletState
+from tankroyale.botapi.schemas.Color import Color
 import typing
 
 

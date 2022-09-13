@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from tankroyale.botapi.schemas.python.BotState import BotState
+from tankroyale.botapi.schemas.BotState import BotState
 
 
 @dataclass

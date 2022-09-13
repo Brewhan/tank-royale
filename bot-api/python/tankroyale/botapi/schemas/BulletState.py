@@ -1,4 +1,4 @@
-from tankroyale.botapi.schemas.python.Color import Color
+from tankroyale.botapi.schemas.Color import Color
 
 
 class BulletState:

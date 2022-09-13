@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from tankroyale.botapi.schemas.python.BotHandshake import BotHandShake
+from tankroyale.botapi.schemas.BotHandshake import BotHandShake
 
 
 @dataclass
