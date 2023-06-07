@@ -1,0 +1,1 @@
+{"$id": null, "$schema": "http://json-schema.org/2020-12/schema#", "description": "Event occurring when a bot has won the round", "type": "object", "extends": {"$ref": "event.yaml"}, "name": "won-round-event"}

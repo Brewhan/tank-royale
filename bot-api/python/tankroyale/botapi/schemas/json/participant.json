@@ -1,0 +1,68 @@
+{
+  "$id": null,
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "description": "Bot participating in a battle",
+  "properties": {
+    "id": {
+      "description": "Identifier for the participant in a battle",
+      "type": "integer"
+    },
+    "name": {
+      "description": "Name of bot, e.g. Killer Bee",
+      "type": "string"
+    },
+    "version": {
+      "description": "Bot version, e.g. 1.0",
+      "type": "string"
+    },
+    "authors": {
+      "description": "Name of authors, e.g. John Doe (john_doe@somewhere.net)",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "description": {
+      "description": "Short description of the bot, preferable a one-liner",
+      "type": "string"
+    },
+    "homepage": {
+      "description": "URL to a home page for the bot",
+      "type": "string"
+    },
+    "countryCodes": {
+      "description": "2-letter country code(s) defined by ISO 3166-1, e.g. \"UK\"",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "/^[a-z]{2}$/ig"
+      }
+    },
+    "gameTypes": {
+      "description": "Game types supported by this bot (defined elsewhere), e.g. \"classic\", \"melee\" and \"1v1\"",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "platform": {
+      "description": "Platform used for running the bot, e.g. JVM 17 or .NET 5",
+      "type": "string"
+    },
+    "programmingLang": {
+      "description": "Language used for programming the bot, e.g. Java 17 or C# 10",
+      "type": "string"
+    },
+    "initialPosition": {
+      "description": "Initial start position of the bot used for debugging.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "version",
+    "author",
+    "gameTypes"
+  ],
+  "name": "participant"
+}

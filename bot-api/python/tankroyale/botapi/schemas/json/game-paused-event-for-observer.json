@@ -1,0 +1,10 @@
+{
+  "$id": null,
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "description": "Event occurring when a game has been paused",
+  "type": "object",
+  "extends": {
+    "$ref": "message.yaml"
+  },
+  "name": "game-paused-event-for-observer"
+}

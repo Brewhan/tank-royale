@@ -1,0 +1,1 @@
+{"$id": null, "$schema": "http://json-schema.org/2020-12/schema#", "description": "Event occurring when a bot has died", "extends": {"$ref": "event.yaml"}, "properties": {"victimId": {"description": "ID of the bot that has died", "type": "integer"}}, "required": ["victimId"], "name": "bot-death-event"}

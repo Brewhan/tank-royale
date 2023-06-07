@@ -1,0 +1,28 @@
+{
+  "$id": null,
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "description": "Event occurring when a bot has been hit by a bullet.",
+  "extends": {
+    "$ref": "event.yaml"
+  },
+  "properties": {
+    "bullet": {
+      "description": "Bullet that has hit the bot",
+      "type": "string"
+    },
+    "damage": {
+      "description": "Damage inflicted by the bullet",
+      "type": "number"
+    },
+    "energy": {
+      "description": "Remaining energy level of the bot after the damage was inflicted",
+      "type": "number"
+    }
+  },
+  "required": [
+    "bullet",
+    "damage",
+    "energy"
+  ],
+  "name": "hit-by-bullet-event"
+}

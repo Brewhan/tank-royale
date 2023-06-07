@@ -1,0 +1,18 @@
+{
+  "$id": null,
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "description": "Current state of a bot, which included an id",
+  "extends": {
+    "$ref": "bot-state.yaml"
+  },
+  "properties": {
+    "id": {
+      "description": "ID of bot for the observer",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id"
+  ],
+  "name": "bot-state-with-id"
+}

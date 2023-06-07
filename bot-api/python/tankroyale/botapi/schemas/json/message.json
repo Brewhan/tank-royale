@@ -1,0 +1,52 @@
+{
+  "$id": null,
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "description": "Message exchanged between server and client",
+  "properties": {
+    "type": {
+      "enum": [
+        "BotHandshake",
+        "ControllerHandshake",
+        "ObserverHandshake",
+        "ServerHandshake",
+        "BotReady",
+        "BotIntent",
+        "BotInfo",
+        "BotListUpdate",
+        "GameStartedEventForBot",
+        "GameStartedEventForObserver",
+        "GameEndedEventForBot",
+        "GameEndedEventForObserver",
+        "GameAbortedEvent",
+        "GamePausedEventForObserver",
+        "GameResumedEventForObserver",
+        "RoundStartedEvent",
+        "RoundEndedEvent",
+        "ChangeTps",
+        "TpsChangedEvent",
+        "BotDeathEvent",
+        "BotHitBotEvent",
+        "BotHitWallEvent",
+        "BulletFiredEvent",
+        "BulletHitBotEvent",
+        "BulletHitBulletEvent",
+        "BulletHitWallEvent",
+        "HitByBulletEvent",
+        "ScannedBotEvent",
+        "SkippedTurnEvent",
+        "TickEventForBot",
+        "TickEventForObserver",
+        "WonRoundEvent",
+        "StartGame",
+        "StopGame",
+        "PauseGame",
+        "ResumeGame",
+        "NextTurn"
+      ]
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "name": "message"
+}

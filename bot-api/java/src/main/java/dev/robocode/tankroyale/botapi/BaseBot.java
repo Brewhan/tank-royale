@@ -761,3 +761,4 @@ public abstract class BaseBot implements IBaseBot {
         return color == null ? null : "#" + color.toHex();
     }
 }
+

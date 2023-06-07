@@ -1,0 +1,98 @@
+{
+  "$id": null,
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "description": "Current state of a bot without an id. The id must be hidden for enemy bots",
+  "properties": {
+    "energy": {
+      "description": "Energy level",
+      "type": "number"
+    },
+    "x": {
+      "description": "X coordinate",
+      "type": "number"
+    },
+    "y": {
+      "description": "Y coordinate",
+      "type": "number"
+    },
+    "direction": {
+      "description": "Driving direction in degrees",
+      "type": "number"
+    },
+    "gunDirection": {
+      "description": "Gun direction in degrees",
+      "type": "number"
+    },
+    "radarDirection": {
+      "description": "Radar direction in degrees",
+      "type": "number"
+    },
+    "radarSweep": {
+      "description": "Radar sweep angle in degrees, i.e. angle between previous and current radar direction",
+      "type": "number"
+    },
+    "speed": {
+      "description": "Speed measured in units per turn",
+      "type": "number"
+    },
+    "turnRate": {
+      "description": "Turn rate of the body in degrees per turn (can be positive and negative)",
+      "type": "number"
+    },
+    "gunTurnRate": {
+      "description": "Turn rate of the gun in degrees per turn (can be positive and negative)",
+      "type": "number"
+    },
+    "radarTurnRate": {
+      "description": "Turn rate of the radar in degrees per turn (can be positive and negative)",
+      "type": "number"
+    },
+    "gunHeat": {
+      "description": "Gun heat",
+      "type": "number"
+    },
+    "bodyColor": {
+      "description": "Current RGB color of the body",
+      "type": "string"
+    },
+    "turretColor": {
+      "description": "New color of the gun turret",
+      "type": "string"
+    },
+    "radarColor": {
+      "description": "New color of the radar",
+      "type": "string"
+    },
+    "bulletColor": {
+      "description": "New color of the bullet. Note. This will be the color of a bullet when it is fired",
+      "type": "string"
+    },
+    "scanColor": {
+      "description": "New color of the scan arc",
+      "type": "string"
+    },
+    "tracksColor": {
+      "description": "New color of the tracks",
+      "type": "string"
+    },
+    "gunColor": {
+      "description": "New color of gun",
+      "type": "string"
+    }
+  },
+  "required": [
+    "energy",
+    "x",
+    "y",
+    "direction",
+    "gunDirection",
+    "radarDirection",
+    "radarSweep",
+    "speed",
+    "turnRate",
+    "gunTurnRate",
+    "radarTurnRate",
+    "gunHeat"
+  ],
+  "name": "bot-state"
+}

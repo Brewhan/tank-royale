@@ -1,0 +1,26 @@
+{
+  "$id": null,
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "description": "Event occurring when game has ended. Gives all game results visible for an observer.",
+  "extends": {
+    "$ref": "message.yaml"
+  },
+  "properties": {
+    "numberOfRounds": {
+      "description": "Number of rounds played",
+      "type": "integer"
+    },
+    "results": {
+      "description": "Results of the battle",
+      "type": "array",
+      "items": {
+        "$ref": "bot-results-for-observer.yaml"
+      }
+    }
+  },
+  "required": [
+    "numberOfRounds",
+    "results"
+  ],
+  "name": "game-ended-event-for-observer"
+}

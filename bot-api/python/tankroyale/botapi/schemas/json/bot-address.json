@@ -1,0 +1,20 @@
+{
+  "$id": null,
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "description": "Bot address",
+  "properties": {
+    "host": {
+      "description": "Host name or IP address",
+      "type": "string"
+    },
+    "port": {
+      "description": "Port number",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "host",
+    "port"
+  ],
+  "name": "bot-address"
+}

@@ -1,0 +1,1 @@
+{"$id": null, "$schema": "http://json-schema.org/2020-12/schema#", "description": "Event occurring when a bullet has been fired from a bot", "extends": {"$ref": "event.yaml"}, "properties": {"bullet": {"description": "Bullet that was fired", "type": "string"}}, "required": ["bullet"], "name": "bullet-fired-event"}

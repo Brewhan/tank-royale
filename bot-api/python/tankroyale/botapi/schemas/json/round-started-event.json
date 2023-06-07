@@ -1,0 +1,1 @@
+{"$id": null, "$schema": "http://json-schema.org/2020-12/schema#", "description": "Event occurring when a new round has started.", "type": "object", "extends": {"$ref": "message.yaml"}, "properties": {"roundNumber": {"description": "The current round number in the battle when event occurred", "type": "integer"}}, "required": ["roundNumber"], "name": "round-started-event"}

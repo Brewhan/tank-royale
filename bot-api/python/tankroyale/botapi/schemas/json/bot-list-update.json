@@ -1,0 +1,22 @@
+{
+  "$id": null,
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "description": "Bot list update",
+  "extends": {
+    "$ref": "message.yaml"
+  },
+  "properties": {
+    "bots": {
+      "description": "List of bots",
+      "type": "array",
+      "items": {
+        "description": "Bot info",
+        "$ref": "bot-info.yaml"
+      }
+    }
+  },
+  "required": [
+    "bots"
+  ],
+  "name": "bot-list-update"
+}
