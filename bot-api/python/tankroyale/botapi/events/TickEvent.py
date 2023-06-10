@@ -1,19 +1,22 @@
+from dataclasses import dataclass
+
 from tankroyale.botapi.schemas import BulletState, BotState
 from tankroyale.botapi.events.BotEvent  import BotEvent
 
-
+@dataclass
 class TickEvent(BotEvent):
     round_number: int
     enemy_count: int
     bot_state: BotState
-    bullet_states: list[BulletState]
+    
+    bullet_states: list[BulletState.BulletState]
     events: list[BotEvent]
 
     def __init__(self,
                  turn_number: int,
                  round_number: int,
                  bot_state: BotState,
-                 bullet_states: list[BulletState],
+                 bullet_states: list[BulletState.BulletState],
                  events: list[BotEvent]):
         super(turn_number)
         self.round_number = round_number
