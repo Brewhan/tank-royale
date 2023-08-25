@@ -1,25 +1,25 @@
 from dataclasses import dataclass
-from tankroyale.botapi.schemas.Message import Message
 
 @dataclass
-class BotIntent(Message):
-    turnRate: float
-    gunTurnRate: float
-    radarTurnRate: float
-    targetSpeed: float
-    firepower: float
-    adjustGunForBodyTurn: bool
-    adjustRadarForBodyTurn: bool
-    adjustRadarForGunTurn: bool
-    rescan: bool
-    fireAssist: bool
-    bodyColor: str
-    turretColor: str
-    radarColor: str
-    bulletColor: str
-    scanColor: str
-    tracksColor: str
-    gunColor: str
+class BotIntent:
+    turnRate: float = None
+    gunTurnRate: float = None
+    radarTurnRate: float = None
+    targetSpeed: float = None
+    firepower: float = None
+    adjustGunForBodyTurn: bool = False
+    adjustRadarForBodyTurn: bool = False
+    adjustRadarForGunTurn: bool = False
+    rescan: bool = True
+    fireAssist: bool = True
+    bodyColor: str = ""
+    turretColor: str = ""
+    radarColor: str = ""
+    bulletColor: str = ""
+    scanColor: str = ""
+    tracksColor: str = ""
+    gunColor: str = ""
+    type: str = ""
 
     def __setattr__(self, key, value):
         if key == 'firePower':

@@ -1,20 +1,20 @@
-from typing import Optional
 from dataclasses import dataclass
-from tankroyale.botapi.schemas.Message import Message
 from tankroyale.botapi.schemas.InitialPosition import InitialPosition
 
 
-@dataclass(kw_only=True)
-class BotHandShake(Message):
+@dataclass
+class BotHandshake:
     name: str
     version: str
-    authors: []
-    description: Optional[str] = None
-    homepage: Optional[str] = None
-    countryCodes: Optional[list] = None
-    gameTypes: Optional[list] = None
-    platform: Optional[str] = None
-    programmingLang: Optional[str] = None
-    initialPosition: Optional[InitialPosition] = None
-    secret: Optional[str] = None
-    bootId: Optional[str] = None
+    authors: [] = None
+    description: str = None
+    homepage: str = None
+    countryCodes: list = None
+    gameTypes: list = None
+    platform: str = None
+    programmingLang: str = None
+    initialPosition: InitialPosition = None
+    secret: str = None
+    bootId: str = None
+    sessionId: str = None
+    type: str = "BotHandshake"
