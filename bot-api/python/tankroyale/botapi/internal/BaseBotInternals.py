@@ -53,22 +53,6 @@ class BaseBotInternals:
 
         self.eventHandlingDisabled = False
 
-        # self.eventPriorities = {
-        #     WonRoundEvent: dep.DefaultEventPriority.WON_ROUND,
-        #     SkippedTurnEvent: dep.DefaultEventPriority.SKIPPED_TURN,
-        #     TickEvent: dep.DefaultEventPriority.TICK,
-        #     CustomEvent: dep.DefaultEventPriority.CUSTOM,
-        #     BotDeathEvent: dep.DefaultEventPriority.BOT_DEATH,
-        #     BulletHitWallEvent: dep.DefaultEventPriority.BULLET_HIT_WALL,
-        #     BulletHitBulletEvent: dep.DefaultEventPriority.BULLET_HIT_BULLET,
-        #     BulletHitBotEvent: dep.DefaultEventPriority.BULLET_HIT_BOT,
-        #     BulletFiredEvent: dep.DefaultEventPriority.BULLET_FIRED,
-        #     HitByBulletEvent: dep.DefaultEventPriority.HIT_BY_BULLET,
-        #     HitWallEvent: dep.DefaultEventPriority.HIT_WALL,
-        #     ScannedBotEvent: dep.DefaultEventPriority.SCANNED_BOT,
-        #     DeathEvent: dep.DefaultEventPriority.DEATH,
-        # }
-
     # create a new websocket connection to the server with a given url and return the ws so it can be used to send intents
 
     async def connect(self, url: str, server_secret: str):
@@ -79,9 +63,8 @@ class BaseBotInternals:
         async with connect(url) as ws:
             self.event = await ws.recv()
             if json.loads(self.event)['sessionId']:
-                self.setRunning(True)
+                self.set_running(True)
             await ws.send(self.message(BotHandshake(name="botName", version="1.0", sessionId=json.loads(self.event)['sessionId'], secret=server_secret)))
-            # self.event = await ws.recv()
             self.connection = ws
             while self.isRunning:
                 await self.handle_event_type(json.loads(self.event), self.connection)
@@ -98,31 +81,28 @@ class BaseBotInternals:
             case _:
                 print(event)
 
-    def setRunning(self, isRunning: bool):
+    def set_running(self, isRunning: bool):
         self.isRunning = isRunning
 
-    def onRoundStarted(self):
-        self.resetMovement()
-        self.eventQueue.EventQueue.clear()
+    def on_round_started(self):
+        self.reset_movement()
         self.isStopped = False
-        self.eventHandlingDisabled = False
 
-    def newBotIntent(self):
-        self.botIntent = BotIntent.BotIntent
-        self.botIntent.Type(BotIntent.Message.Type.BotIntent)
+    def new_bot_intent(self):
+        self.botIntent = BotIntent()
 
-    def resetMovement(self):
+    def reset_movement(self):
         self.botIntent.BotIntent.turnRate = 0
         self.botIntent.BotIntent.gunTurnRate = 0
         self.botIntent.BotIntent.radarTurnRate = 0
         self.botIntent.BotIntent.targetSpeed = 0
         self.botIntent.BotIntent.firepower = 0
 
-    def onRoundStarted(self):
-        self.resetMovement()
-        self.eventQueue.EventQueue.clear()
+    def on_round_started(self):
+        self.reset_movement()
         self.isStopped = False
         self.eventHandlingDisabled = False
+
 
     def message(self, data_class: dataclasses):
         return str(dataclasses.asdict(data_class, dict_factory=lambda x: {k: v for (k, v) in x if v is not None and v !=
@@ -130,9 +110,9 @@ class BaseBotInternals:
 
     async def start(self, url, secret):
         await self.connect(url, secret)
-
-if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(BaseBotInternals().start('', 'PBbMsuCpFZtmEaNAWjqOKQ'))
+#
+# if __name__ == "__main__":
+#     loop = asyncio.new_event_loop()
+#     asyncio.set_event_loop(loop)
+#     loop.run_until_complete(BaseBotInternals().start('', 'PBbMsuCpFZtmEaNAWjqOKQ'))
 
