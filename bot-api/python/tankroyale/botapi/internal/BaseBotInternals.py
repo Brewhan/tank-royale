@@ -1,12 +1,8 @@
 import dataclasses
 import json
-import asyncio
-import threading
+
 from websockets import connect
 from tankroyale.botapi.Constants import Constants
-# from tankroyale.botapi.events import RoundStartedEvent, BulletHitWallEvent, Condition, BulletFiredEvent, \
-#     BulletHitBotEvent, BulletHitBulletEvent, ScannedBotEvent, DeathEvent, WonRoundEvent, SkippedTurnEvent, TickEvent, \
-#     CustomEvent, BotDeathEvent, BulletHitWallEvent, HitByBulletEvent, HitWallEvent, DefaultEventPriority as dep
 from tankroyale.botapi.schemas.BotHandshake import BotHandshake
 from tankroyale.botapi.schemas.BotIntent import BotIntent
 from tankroyale.botapi.schemas.Message import Message
@@ -76,6 +72,9 @@ class BaseBotInternals:
                 await ws.send(self.message(BotIntent(type="BotReady")))
             case Message.RoundStartedEvent:
                 await ws.send(self.message(BotIntent(type="BotIntent")))
+                self.new_bot_intent()
+                self.on_round_started()
+                await self.run()
             case Message.TickEventForBot:
                 await ws.send(self.message(BotIntent(type="BotIntent", gunTurnRate=1.0)))
             case _:
@@ -83,6 +82,9 @@ class BaseBotInternals:
 
     def set_running(self, isRunning: bool):
         self.isRunning = isRunning
+
+    async def run(self):
+        pass
 
     def on_round_started(self):
         self.reset_movement()
@@ -92,17 +94,17 @@ class BaseBotInternals:
         self.botIntent = BotIntent()
 
     def reset_movement(self):
-        self.botIntent.BotIntent.turnRate = 0
-        self.botIntent.BotIntent.gunTurnRate = 0
-        self.botIntent.BotIntent.radarTurnRate = 0
-        self.botIntent.BotIntent.targetSpeed = 0
-        self.botIntent.BotIntent.firepower = 0
+        self.botIntent.gunTurnRate = 0
+        self.botIntent.turnRate = 0
+        self.botIntent.radarTurnRate = 0
+        self.botIntent.targetSpeed = 0
+        self.botIntent.firepower = 0
 
-    def on_round_started(self):
-        self.reset_movement()
-        self.isStopped = False
-        self.eventHandlingDisabled = False
-
+    async def dispatch_event(self):
+        ws = self.connection
+        self.botIntent.type = Message.BotIntent
+        await ws.send(self.message(self.botIntent))
+        await ws.recv()
 
     def message(self, data_class: dataclasses):
         return str(dataclasses.asdict(data_class, dict_factory=lambda x: {k: v for (k, v) in x if v is not None and v !=

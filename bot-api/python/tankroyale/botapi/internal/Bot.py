@@ -4,21 +4,27 @@ import asyncio
 
 class Bot(BaseBotInternals):
 
-    # TODO: implement this properly
+    # TODO: implement this properly - the issue here is that we need to understand
+    #  distance remaining and loop the dispatch of the intent until it has gotten where it needs to go
     def forward(self, distance: float):
-        self.botIntent.targetSpeed(distance)
+        self.botIntent.targetSpeed = distance
+        self.dispatch_event()
 
     def back(self, distance: float):
-        self.botIntent.targetSpeed(-distance)
+        self.botIntent.targetSpeed = -distance
+        self.dispatch_event()
 
     def turn_rate(self, turn_rate: float):
-        self.botIntent.turnRate(turn_rate)
+        self.botIntent.turnRate = turn_rate
+        self.dispatch_event()
 
     def gun_turn_rate(self, turn_rate: float):
-        self.botIntent.gunTurnRate(turn_rate)
+        self.botIntent.gunTurnRate = turn_rate
+        self.dispatch_event()
 
     def radar_turn_rate(self, turn_rate: float):
-        self.botIntent.radarTurnRate(turn_rate)
+        self.botIntent.radarTurnRate = turn_rate
+        self.dispatch_event()
 
     # TODO: implement this properly
     # target_speed()
@@ -27,47 +33,55 @@ class Bot(BaseBotInternals):
     # distance_remaining()
 
     def turn_left(self, degrees: float):
-        self.botIntent.turnRate(degrees)
+        self.botIntent.turnRate = degrees
+        self.dispatch_event()
 
     def turn_right(self, degrees: float):
-        self.botIntent.turnRate(-degrees)
+        self.botIntent.turnRate = -degrees
+        self.dispatch_event()
 
     # TODO: implement this properly
     # turn_remaining()
 
     def turn_gun_left(self, degrees: float):
-        self.botIntent.gunTurnRate(degrees)
+        self.botIntent.gunTurnRate = degrees
+        self.dispatch_event()
 
-    def turn_gun_right(self, degrees: float):
-        self.botIntent.gunTurnRate(-degrees)
+    async def turn_gun_right(self, degrees: float):
+        self.botIntent.gunTurnRate = -degrees
+        await self.dispatch_event()
 
     # TODO: implement this properly
     # turn_gun_remaining()
 
     def turn_radar_left(self, degrees: float):
-        self.botIntent.radarTurnRate(self, degrees)
+        self.botIntent.radarTurnRate = degrees
+        self.dispatch_event()
 
     def turn_radar_right(self, degrees: float):
-        self.botIntent.radarTurnRate(-degrees)
+        self.botIntent.radarTurnRate = -degrees
+        self.dispatch_event()
 
     # TODO: implement this properly
     # turn_radar_remaining()
 
     def fire(self, firepower: float):
-        self.botIntent.firepower(firepower)
+        self.botIntent.firepower = firepower
+        self.dispatch_event()
 
     def stop(self):
         self.reset_movement()
+        self.dispatch_event()
 
     def rescan(self):
         self.botIntent.rescan = True
+        self.dispatch_event()
 
     # TODO: implement this properly
     # wait_for()
 
+    def start_bot(self, secret: str):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.start('', 'PBbMsuCpFZtmEaNAWjqOKQ'))
 
-# TODO: make this a function callable in the bot script
-if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(Bot().start('', 'PBbMsuCpFZtmEaNAWjqOKQ'))
