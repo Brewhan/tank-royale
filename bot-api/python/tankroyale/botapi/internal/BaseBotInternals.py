@@ -84,7 +84,7 @@ class BaseBotInternals(ABC):
                 for e in event['events']:
                     match e['type']:
                         case Message.ScannedBotEvent:
-                            self.on_scanned_bot(e)
+                            await self.on_scanned_bot(e)
                 # TODO: more event types please
 
             case _:

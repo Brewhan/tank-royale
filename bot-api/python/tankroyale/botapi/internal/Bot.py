@@ -65,13 +65,16 @@ class Bot(BaseBotInternals):
     # TODO: implement this properly
     # turn_radar_remaining()
 
-    def fire(self, firepower: float):
+    async def fire(self, firepower: float):
         self.botIntent.firepower = firepower
-        self.dispatch_event()
+        await self.dispatch_event()
+        #stop firing after first shot
+        self.botIntent.firepower = 0
+        await self.dispatch_event() ## THIS IS A DELIBERATE BUG - REMOVE ONCE TICK EVENT IS SENDING INTENTS EVERY TICK.
 
-    def stop(self):
+    async def stop(self):
         self.reset_movement()
-        self.dispatch_event()
+        await self.dispatch_event()
 
     def rescan(self):
         self.botIntent.rescan = True
