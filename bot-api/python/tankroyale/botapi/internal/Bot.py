@@ -83,5 +83,5 @@ class Bot(BaseBotInternals):
     def start_bot(self, secret: str):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.start('', 'PBbMsuCpFZtmEaNAWjqOKQ'))
+        loop.run_until_complete(self.start('', secret))
 

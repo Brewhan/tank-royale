@@ -1,3 +1,5 @@
+from abc import abstractmethod, ABC
+
 import dataclasses
 import json
 
@@ -8,7 +10,7 @@ from tankroyale.botapi.schemas.BotIntent import BotIntent
 from tankroyale.botapi.schemas.Message import Message
 
 
-class BaseBotInternals:
+class BaseBotInternals(ABC):
 
     def __init__(self):
         self.tickEvent = None
@@ -60,7 +62,7 @@ class BaseBotInternals:
             self.event = await ws.recv()
             if json.loads(self.event)['sessionId']:
                 self.set_running(True)
-            await ws.send(self.message(BotHandshake(name="botName", version="1.0", sessionId=json.loads(self.event)['sessionId'], secret=server_secret)))
+            await ws.send(self.message(BotHandshake(name="Brew", version="1.0", sessionId=json.loads(self.event)['sessionId'], secret=server_secret)))
             self.connection = ws
             while self.isRunning:
                 await self.handle_event_type(json.loads(self.event), self.connection)
@@ -76,13 +78,22 @@ class BaseBotInternals:
                 self.on_round_started()
                 await self.run()
             case Message.TickEventForBot:
-                await ws.send(self.message(BotIntent(type="BotIntent", gunTurnRate=1.0)))
+                # await ws.send(self.message(BotIntent(type="BotIntent", gunTurnRate=1.0)))
+                # TODO: call relevant methods for each event
+
+                for e in event['events']:
+                    match e['type']:
+                        case Message.ScannedBotEvent:
+                            self.on_scanned_bot(e)
+                # TODO: more event types please
+
             case _:
-                print(event)
+                pass
 
     def set_running(self, isRunning: bool):
         self.isRunning = isRunning
 
+    @abstractmethod
     async def run(self):
         pass
 
@@ -104,7 +115,7 @@ class BaseBotInternals:
         ws = self.connection
         self.botIntent.type = Message.BotIntent
         await ws.send(self.message(self.botIntent))
-        await ws.recv()
+        self.event = await ws.recv() # maybe remove this
 
     def message(self, data_class: dataclasses):
         return str(dataclasses.asdict(data_class, dict_factory=lambda x: {k: v for (k, v) in x if v is not None and v !=
@@ -112,6 +123,10 @@ class BaseBotInternals:
 
     async def start(self, url, secret):
         await self.connect(url, secret)
+
+    @abstractmethod
+    def on_scanned_bot(self, e):
+        pass
 #
 # if __name__ == "__main__":
 #     loop = asyncio.new_event_loop()
