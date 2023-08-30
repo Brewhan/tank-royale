@@ -6,8 +6,11 @@ class BrewBot(Bot):
     # Called when bot starts
     async def run(self):
         await self.turn_gun_right(10)
+        await self.forward(10.0)
+        await self.back(10.0)
 
     async def on_scanned_bot(self, e):
+
         await self.fire(1.0)
 
 

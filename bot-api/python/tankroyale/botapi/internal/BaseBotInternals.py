@@ -40,6 +40,7 @@ class BaseBotInternals(ABC):
         self.savedTurnRate: float
         self.savedGunTurnRate: float
         self.savedRadarTurnRate: float
+        self.distanceRemaining: float = 0
 
         self.botIntent: BotIntent
         # self.tickEvent: TickEvent.TickEvent
@@ -116,6 +117,7 @@ class BaseBotInternals(ABC):
         self.botIntent.type = Message.BotIntent
         await ws.send(self.message(self.botIntent))
         self.event = await ws.recv() # maybe remove this
+        await self.update_movement()
 
     def message(self, data_class: dataclasses):
         return str(dataclasses.asdict(data_class, dict_factory=lambda x: {k: v for (k, v) in x if v is not None and v !=
@@ -123,6 +125,16 @@ class BaseBotInternals(ABC):
 
     async def start(self, url, secret):
         await self.connect(url, secret)
+
+    #TODO: assign event to types instead of using json loads
+    async def update_movement(self):
+        if json.loads(self.event)['botState']['speed'] > 0:
+            self.distanceRemaining -= json.loads(self.event)['botState']['speed']
+            self.botIntent.targetSpeed = self.distanceRemaining
+        else:
+            self.botIntent.targetSpeed = 0
+            self.distanceRemaining = 0
+        pass
 
     @abstractmethod
     def on_scanned_bot(self, e):

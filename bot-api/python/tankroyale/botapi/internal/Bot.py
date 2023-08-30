@@ -1,3 +1,4 @@
+
 from tankroyale.botapi.internal.BaseBotInternals import BaseBotInternals
 import asyncio
 
@@ -6,13 +7,24 @@ class Bot(BaseBotInternals):
 
     # TODO: implement this properly - the issue here is that we need to understand
     #  distance remaining and loop the dispatch of the intent until it has gotten where it needs to go
-    def forward(self, distance: float):
-        self.botIntent.targetSpeed = distance
-        self.dispatch_event()
+    async def forward(self, distance: float):
+        if self.isStopped:
+            await self.dispatch_event()
+        else:
+            self.botIntent.targetSpeed = distance
+            self.distanceRemaining = distance
+            while True:
+                if self.isRunning and (self.distanceRemaining != 0):
+                    await self.dispatch_event()
+                else:
+                    break
 
-    def back(self, distance: float):
+    # def set_forward(self, distance: float):
+    #     speed = self.get_new_target_speed(self.event['botState']['speed'], distance)
+
+    async def back(self, distance: float):
         self.botIntent.targetSpeed = -distance
-        self.dispatch_event()
+        await self.dispatch_event()
 
     def turn_rate(self, turn_rate: float):
         self.botIntent.turnRate = turn_rate
