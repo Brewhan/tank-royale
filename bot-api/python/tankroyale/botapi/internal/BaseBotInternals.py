@@ -42,7 +42,12 @@ class BaseBotInternals(ABC):
         self.savedTurnRate: float
         self.savedGunTurnRate: float
         self.savedRadarTurnRate: float
+        self.turnRemaining: float = 0
         self.distanceRemaining: float = 0
+
+        self.previousDirection: float = 0
+        self.previousGunDirection: float = 0
+        self.previousRadarDirection: float = 0
 
         self.botIntent: BotIntent
         # self.tickEvent: TickEvent.TickEvent
@@ -82,9 +87,7 @@ class BaseBotInternals(ABC):
             case Message.TickEventForBot:
                 if event['turnNumber'] == 1:
                     await self.run()
-                # await ws.send(self.message(BotIntent(type="BotIntent", gunTurnRate=1.0)))
                 # TODO: call relevant methods for each event
-
                 for e in event['events']:
                     match e['type']:
                         case Message.ScannedBotEvent:
@@ -120,7 +123,8 @@ class BaseBotInternals(ABC):
         self.botIntent.type = Message.BotIntent
         await ws.send(self.message(self.botIntent))
         self.event = await ws.recv()
-        await self.update_movement()
+        self.update_movement()
+        self.update_turn_remaining()
 
     def message(self, data_class: dataclasses):
         return str(dataclasses.asdict(data_class, dict_factory=lambda x: {k: v for (k, v) in x if v is not None and v !=
@@ -138,7 +142,20 @@ class BaseBotInternals(ABC):
             self.botIntent.targetSpeed = 0
             self.distanceRemaining = 0
 
-    async def update_movement(self):
+    def update_turn_remaining(self):
+        delta = self.calc_delta_angle(json.loads(self.event)['botState']['direction'], self.previousDirection)
+        self.previousDirection = json.loads(self.event)['botState']['direction']
+
+        if abs(self.turnRemaining) <= abs(delta):
+            self.turnRemaining = 0
+        else:
+            self.turnRemaining -= delta
+            if self.is_near_zero(self.turnRemaining):
+                self.turnRemaining = 0
+
+        self.botIntent.turnRate = self.turnRemaining
+
+    def update_movement(self):
         if math.isinf(self.distanceRemaining):
             self.botIntent.targetSpeed = (self.maxSpeed if self.distanceRemaining == math.inf else -self.maxSpeed)
         else:
@@ -176,21 +193,39 @@ class BaseBotInternals(ABC):
         acceleration_time = 1 - deceleration_time
         return min(1, deceleration_time) * self.absDeceleration + max(0, acceleration_time) * Constants.ACCELERATION
 
-    def is_near_zero(self, value: float) -> float:
-        return abs(value) < .00001
-
-    def clamp(self, n, smallest: float, largest: float): return max(smallest, min(n, largest))
-
-    @abstractmethod
-    def on_scanned_bot(self, e):
-        pass
-
     def get_distance_travelled_until_stop(self, speed) -> float:
         speed = abs(speed)
         distance = 0
         while speed > 0:
             distance += (speed := self.get_new_target_speed(speed, 0))
         return distance
+
+    def is_near_zero(self, value: float) -> float:
+        return abs(value) < .00001
+
+    def clamp(self, n, smallest: float, largest: float): return max(smallest, min(n, largest))
+
+    def calc_delta_angle(self, target_angle: float, source_angle: float):
+        angle = target_angle - source_angle
+        # angle += -360 if angle > 180 else 360 if angle < -180 else 0
+
+        if angle > 180:
+            angle += -360
+        elif angle < -180:
+            angle += 360
+        else:
+            angle += 0
+        # return min(y-x, y-x+2*math.pi, y-x-2*math.pi, key=abs)
+
+        return angle
+
+    @abstractmethod
+    def on_scanned_bot(self, e):
+        pass
+
+
+
+
 #
 # if __name__ == "__main__":
 #     loop = asyncio.new_event_loop()

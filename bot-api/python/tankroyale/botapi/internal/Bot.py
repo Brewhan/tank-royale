@@ -46,13 +46,23 @@ class Bot(BaseBotInternals, ABC):
     # TODO: implement this properly
     # distance_remaining()
 
-    def turn_left(self, degrees: float):
-        self.botIntent.turnRate = degrees
-        self.send_intent()
+    async def turn_left(self, degrees: float):
+        if self.isStopped:
+            await self.send_intent()
+        else:
+            self.set_turn_left(degrees)
+        while True:
+            if self.isRunning and self.turnRemaining != 0:
+                await self.send_intent()
+            else:
+                break
 
-    def turn_right(self, degrees: float):
-        self.botIntent.turnRate = -degrees
-        self.send_intent()
+    def set_turn_left(self, degrees: float):
+        self.turnRemaining = degrees
+        self.botIntent.turnRate = degrees
+
+    async def turn_right(self, degrees: float):
+        await self.turn_left(-degrees)
 
     # TODO: implement this properly
     # turn_remaining()
