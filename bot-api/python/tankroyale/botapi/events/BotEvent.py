@@ -1,11 +1,11 @@
 class BotEvent:
-    turn_number: int
+    turnNumber: int
 
-    def __init__(self, turn_number: int):
-        self.turn_number = turn_number
+    def __init__(self, turnNumber: int):
+        self.turnNumber = turnNumber
 
     def turn_number(self):
-        return self.turn_number
+        return self.turnNumber
 
     @staticmethod
     def is_critical():

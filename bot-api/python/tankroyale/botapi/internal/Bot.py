@@ -1,9 +1,11 @@
+from abc import ABC
 
 from tankroyale.botapi.internal.BaseBotInternals import BaseBotInternals
 import asyncio
 import json
 
-class Bot(BaseBotInternals):
+
+class Bot(BaseBotInternals, ABC):
 
     # TODO: implement this properly - the issue here is that we need to understand
     #  distance remaining and loop the dispatch of the intent until it has gotten where it needs to go

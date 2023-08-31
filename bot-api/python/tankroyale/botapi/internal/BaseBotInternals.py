@@ -11,7 +11,6 @@ from tankroyale.botapi.schemas.BotHandshake import BotHandshake
 from tankroyale.botapi.schemas.BotIntent import BotIntent
 from tankroyale.botapi.schemas.Message import Message
 
-
 class BaseBotInternals(ABC):
 
     def __init__(self):
@@ -80,8 +79,9 @@ class BaseBotInternals(ABC):
                 await ws.send(self.message(BotIntent(type="BotIntent")))
                 self.new_bot_intent()
                 self.on_round_started()
-                await self.run()
             case Message.TickEventForBot:
+                if event['turnNumber'] == 1:
+                    await self.run()
                 # await ws.send(self.message(BotIntent(type="BotIntent", gunTurnRate=1.0)))
                 # TODO: call relevant methods for each event
 
@@ -119,7 +119,7 @@ class BaseBotInternals(ABC):
         ws = self.connection
         self.botIntent.type = Message.BotIntent
         await ws.send(self.message(self.botIntent))
-        self.event = await ws.recv() # maybe remove this
+        self.event = await ws.recv()
         await self.update_movement()
 
     def message(self, data_class: dataclasses):
