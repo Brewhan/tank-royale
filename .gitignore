@@ -17,6 +17,7 @@ bin/
 obj/
 generated/
 
+*.pyc
 *.iml
 
 /games.properties

@@ -2,6 +2,8 @@ from abc import abstractmethod, ABC
 
 import dataclasses
 import json
+import math
+
 
 from websockets import connect
 from tankroyale.botapi.Constants import Constants
@@ -13,6 +15,7 @@ from tankroyale.botapi.schemas.Message import Message
 class BaseBotInternals(ABC):
 
     def __init__(self):
+        self.isOverDriving = None
         self.tickEvent = None
         self.botIntent = None
         self.connection = None
@@ -48,7 +51,7 @@ class BaseBotInternals(ABC):
         self.isRunning = False
         self.isStopped = False
 
-        self.absDecelleration = abs(Constants.DECELERATION)
+        self.absDeceleration = abs(Constants.DECELERATION)
 
         self.eventHandlingDisabled = False
 
@@ -112,7 +115,7 @@ class BaseBotInternals(ABC):
         self.botIntent.targetSpeed = 0
         self.botIntent.firepower = 0
 
-    async def dispatch_event(self):
+    async def send_intent(self):
         ws = self.connection
         self.botIntent.type = Message.BotIntent
         await ws.send(self.message(self.botIntent))
@@ -127,18 +130,67 @@ class BaseBotInternals(ABC):
         await self.connect(url, secret)
 
     #TODO: assign event to types instead of using json loads
-    async def update_movement(self):
+    async def update_movement_simple(self):
         if json.loads(self.event)['botState']['speed'] > 0:
             self.distanceRemaining -= json.loads(self.event)['botState']['speed']
             self.botIntent.targetSpeed = self.distanceRemaining
         else:
             self.botIntent.targetSpeed = 0
             self.distanceRemaining = 0
-        pass
+
+    async def update_movement(self):
+        if math.isinf(self.distanceRemaining):
+            self.botIntent.targetSpeed = (self.maxSpeed if self.distanceRemaining == math.inf else -self.maxSpeed)
+        else:
+            distance = self.distanceRemaining
+            new_speed = self.get_new_target_speed(json.loads(self.event)['botState']['speed'], distance)
+            self.botIntent.targetSpeed = new_speed
+
+            if self.is_near_zero(new_speed) and self.isOverDriving:
+                distance = 0
+                self.isOverDriving = False
+
+            if math.copysign(1, distance*new_speed) != -1:
+                self.isOverDriving = self.get_distance_travelled_until_stop(new_speed) > abs(distance)
+
+            self.distanceRemaining = distance - new_speed
+
+    def get_new_target_speed(self, speed, distance) -> float:
+        if distance < 0:
+            return -self.get_new_target_speed(-speed, -distance)
+        target_speed = self.maxSpeed if distance == math.inf else min(self.maxSpeed, self.get_max_speed(distance))
+
+        return self.clamp(target_speed, speed - self.absDeceleration, speed + Constants.ACCELERATION) if speed >= 0\
+            else self.clamp(target_speed, speed - Constants.ACCELERATION, speed + self.get_max_deceleration(-speed))
+
+    def get_max_speed(self, distance: float):
+        deceleration_time = max(1, math.ceil((math.sqrt((4 * 2 / self.absDeceleration) * distance + 1) - 1) / 2))
+        if deceleration_time == math.inf:
+            return Constants.MAX_SPEED
+        deceleration_distance = (deceleration_time / 2) * (deceleration_time - 1) * self.absDeceleration
+        return ((deceleration_time - 1) * self.absDeceleration) + ((distance - deceleration_distance) /
+                                                                   deceleration_time)
+
+    def get_max_deceleration(self, speed):
+        deceleration_time = speed / self.absDeceleration
+        acceleration_time = 1 - deceleration_time
+        return min(1, deceleration_time) * self.absDeceleration + max(0, acceleration_time) * Constants.ACCELERATION
+
+    def is_near_zero(self, value: float) -> float:
+        return abs(value) < .00001
+
+    def clamp(self, n, smallest: float, largest: float): return max(smallest, min(n, largest))
 
     @abstractmethod
     def on_scanned_bot(self, e):
         pass
+
+    def get_distance_travelled_until_stop(self, speed) -> float:
+        speed = abs(speed)
+        distance = 0
+        while speed > 0:
+            distance += (speed := self.get_new_target_speed(speed, 0))
+        return distance
 #
 # if __name__ == "__main__":
 #     loop = asyncio.new_event_loop()
