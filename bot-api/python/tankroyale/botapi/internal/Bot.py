@@ -28,18 +28,6 @@ class Bot(BaseBotInternals, ABC):
     async def back(self, distance: float):
         await self.forward(-distance)
 
-    def turn_rate(self, turn_rate: float):
-        self.botIntent.turnRate = turn_rate
-        self.send_intent()
-
-    def gun_turn_rate(self, turn_rate: float):
-        self.botIntent.gunTurnRate = turn_rate
-        self.send_intent()
-
-    def radar_turn_rate(self, turn_rate: float):
-        self.botIntent.radarTurnRate = turn_rate
-        self.send_intent()
-
     # TODO: implement this properly
     # target_speed()
 
@@ -67,24 +55,44 @@ class Bot(BaseBotInternals, ABC):
     # TODO: implement this properly
     # turn_remaining()
 
-    def turn_gun_left(self, degrees: float):
+    async def turn_gun_left(self, degrees: float):
+        if self.isStopped:
+            await self.send_intent()
+        else:
+            self.set_turn_gun_left(degrees)
+        while True:
+            if self.isRunning and self.gunTurnRemaining != 0:
+                await self.send_intent()
+            else:
+                break
+
+    def set_turn_gun_left(self, degrees: float):
+        self.gunTurnRemaining = degrees
         self.botIntent.gunTurnRate = degrees
-        self.send_intent()
 
     async def turn_gun_right(self, degrees: float):
-        self.botIntent.gunTurnRate = -degrees
-        await self.send_intent()
+        await self.turn_gun_left(-degrees)
 
     # TODO: implement this properly
     # turn_gun_remaining()
 
-    def turn_radar_left(self, degrees: float):
-        self.botIntent.radarTurnRate = degrees
-        self.send_intent()
+    async def turn_radar_left(self, degrees: float):
+        if self.isStopped:
+            await self.send_intent()
+        else:
+            self.set_turn_radar_left(degrees)
+        while True:
+            if self.isRunning and self.radarTurnRemaining != 0:
+                await self.send_intent()
+            else:
+                break
 
-    def turn_radar_right(self, degrees: float):
-        self.botIntent.radarTurnRate = -degrees
-        self.send_intent()
+    def set_turn_radar_left(self, degrees: float):
+        self.radarTurnRemaining = degrees
+        self.botIntent.radarTurnRate = degrees
+
+    async def turn_radar_right(self, degrees: float):
+        await self.turn_radar_left(-degrees)
 
     # TODO: implement this properly
     # turn_radar_remaining()
@@ -92,9 +100,9 @@ class Bot(BaseBotInternals, ABC):
     async def fire(self, firepower: float):
         self.botIntent.firepower = firepower
         await self.send_intent()
-        #stop firing after first shot
+        # stop firing after first shot
         self.botIntent.firepower = 0
-        await self.send_intent() ## THIS IS A DELIBERATE BUG - REMOVE ONCE TICK EVENT IS SENDING INTENTS EVERY TICK.
+        await self.send_intent()  ## THIS IS A DELIBERATE BUG - REMOVE ONCE TICK EVENT IS SENDING INTENTS EVERY TICK.
 
     async def stop(self):
         self.reset_movement()
@@ -111,4 +119,3 @@ class Bot(BaseBotInternals, ABC):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self.start('', secret))
-

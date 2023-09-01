@@ -44,6 +44,8 @@ class BaseBotInternals(ABC):
         self.savedRadarTurnRate: float
         self.turnRemaining: float = 0
         self.distanceRemaining: float = 0
+        self.gunTurnRemaining: float = 0
+        self.radarTurnRemaining: float = 0
 
         self.previousDirection: float = 0
         self.previousGunDirection: float = 0
@@ -94,6 +96,8 @@ class BaseBotInternals(ABC):
                             await self.on_scanned_bot(e)
                 # TODO: more event types please
 
+
+
             case _:
                 pass
 
@@ -123,8 +127,11 @@ class BaseBotInternals(ABC):
         self.botIntent.type = Message.BotIntent
         await ws.send(self.message(self.botIntent))
         self.event = await ws.recv()
-        self.update_movement()
-        self.update_turn_remaining()
+        if json.loads(self.event)['type'] == 'TickEventForBot': #try and move this higher
+            self.update_turn_remaining()
+            self.update_gun_turn_remaining()
+            self.update_radar_turn_remaining()
+            self.update_movement()
 
     def message(self, data_class: dataclasses):
         return str(dataclasses.asdict(data_class, dict_factory=lambda x: {k: v for (k, v) in x if v is not None and v !=
@@ -145,15 +152,39 @@ class BaseBotInternals(ABC):
     def update_turn_remaining(self):
         delta = self.calc_delta_angle(json.loads(self.event)['botState']['direction'], self.previousDirection)
         self.previousDirection = json.loads(self.event)['botState']['direction']
-
         if abs(self.turnRemaining) <= abs(delta):
             self.turnRemaining = 0
         else:
             self.turnRemaining -= delta
             if self.is_near_zero(self.turnRemaining):
                 self.turnRemaining = 0
-
         self.botIntent.turnRate = self.turnRemaining
+        
+    def update_gun_turn_remaining(self):
+        print(self.event)
+        delta = self.calc_delta_angle(json.loads(self.event)['botState']['gunDirection'], self.previousGunDirection)
+        self.previousGunDirection = json.loads(self.event)['botState']['gunDirection']
+        if abs(self.gunTurnRemaining) <= abs(delta):
+            self.gunTurnRemaining = 0
+        else:
+            self.gunTurnRemaining -= delta
+            if self.is_near_zero(self.gunTurnRemaining):
+                self.gunTurnRemaining = 0
+    
+        self.botIntent.gunTurnRate = self.gunTurnRemaining
+
+    def update_radar_turn_remaining(self):
+        delta = self.calc_delta_angle(json.loads(self.event)['botState']['radarDirection'], self.previousRadarDirection)
+        self.previousRadarDirection = json.loads(self.event)['botState']['radarDirection']
+        if abs(self.radarTurnRemaining) <= abs(delta):
+            self.radarTurnRemaining = 0
+        else:
+            self.radarTurnRemaining -= delta
+            if self.is_near_zero(self.radarTurnRemaining):
+                self.radarTurnRemaining = 0
+
+        # self.set_radar_turn_rate(self.radarTurnRemaining)
+        self.botIntent.radarTurnRate = self.radarTurnRemaining
 
     def update_movement(self):
         if math.isinf(self.distanceRemaining):
@@ -205,7 +236,7 @@ class BaseBotInternals(ABC):
 
     def clamp(self, n, smallest: float, largest: float): return max(smallest, min(n, largest))
 
-    def calc_delta_angle(self, target_angle: float, source_angle: float):
+    def calc_delta_angle(self, target_angle: float, source_angle: float) -> float:
         angle = target_angle - source_angle
         # angle += -360 if angle > 180 else 360 if angle < -180 else 0
 
@@ -216,19 +247,33 @@ class BaseBotInternals(ABC):
         else:
             angle += 0
         # return min(y-x, y-x+2*math.pi, y-x-2*math.pi, key=abs)
-
         return angle
+
+    def to_infinite_value(self, turn_rate: float) -> float:
+        if turn_rate > 0:
+            return math.inf
+        if turn_rate < 0:
+            return -math.inf
+        else:
+            return 0
+
+    def set_turn_rate(self, turn_rate: float):
+        self.botIntent.turnRate = turn_rate
+        self.turnRemaining = self.to_infinite_value(turn_rate)
+        # self.send_intent()
+
+    def set_gun_turn_rate(self, turn_rate: float):
+        self.botIntent.gunTurnRate = turn_rate
+        self.gunTurnRemaining = self.to_infinite_value(turn_rate)
+        # self.send_intent()
+
+    def set_radar_turn_rate(self, turn_rate: float):
+        self.botIntent.radarTurnRate = turn_rate
+        self.radarTurnRemaining = self.to_infinite_value(turn_rate)
+        # self.send_intent()
 
     @abstractmethod
     def on_scanned_bot(self, e):
         pass
 
-
-
-
-#
-# if __name__ == "__main__":
-#     loop = asyncio.new_event_loop()
-#     asyncio.set_event_loop(loop)
-#     loop.run_until_complete(BaseBotInternals().start('', 'PBbMsuCpFZtmEaNAWjqOKQ'))
 
