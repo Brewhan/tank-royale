@@ -91,10 +91,14 @@ class BaseBotInternals(ABC):
                     self.reset_movement()
                     await self.run()
                 # TODO: call relevant methods for each event
-                for e in event['events']:
-                    match e['type']:
-                        case Message.ScannedBotEvent:
-                            await self.on_scanned_bot(e)
+                if len(event['events']) > 0:
+                    for e in event['events']:
+                        match e['type']:
+                            case Message.ScannedBotEvent:
+                                await self.on_scanned_bot(e)
+                else:
+                    await self.send_intent()
+
                 # TODO: more event types please
             case _:
                 pass
