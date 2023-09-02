@@ -88,6 +88,7 @@ class BaseBotInternals(ABC):
                 self.on_round_started()
             case Message.TickEventForBot:
                 if event['turnNumber'] == 1:
+                    self.reset_movement()
                     await self.run()
                 # TODO: call relevant methods for each event
                 for e in event['events']:
@@ -95,9 +96,6 @@ class BaseBotInternals(ABC):
                         case Message.ScannedBotEvent:
                             await self.on_scanned_bot(e)
                 # TODO: more event types please
-
-
-
             case _:
                 pass
 
@@ -161,7 +159,6 @@ class BaseBotInternals(ABC):
         self.botIntent.turnRate = self.turnRemaining
         
     def update_gun_turn_remaining(self):
-        print(self.event)
         delta = self.calc_delta_angle(json.loads(self.event)['botState']['gunDirection'], self.previousGunDirection)
         self.previousGunDirection = json.loads(self.event)['botState']['gunDirection']
         if abs(self.gunTurnRemaining) <= abs(delta):

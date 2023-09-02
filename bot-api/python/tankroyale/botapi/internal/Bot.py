@@ -41,6 +41,7 @@ class Bot(BaseBotInternals, ABC):
             self.set_turn_left(degrees)
         while True:
             if self.isRunning and self.turnRemaining != 0:
+                print(self.event)
                 await self.send_intent()
             else:
                 break
