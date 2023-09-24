@@ -7,6 +7,8 @@ import json
 
 class Bot(BaseBotInternals, ABC):
 
+    # scanning whilst moving still has some ways to go - possibly some issue with threading
+
     # TODO: implement this properly - the issue here is that we need to understand
     #  distance remaining and loop the dispatch of the intent until it has gotten where it needs to go
     async def forward(self, distance: float):
@@ -41,7 +43,6 @@ class Bot(BaseBotInternals, ABC):
             self.set_turn_left(degrees)
         while True:
             if self.isRunning and self.turnRemaining != 0:
-                print(self.event)
                 await self.send_intent()
             else:
                 break
@@ -109,9 +110,10 @@ class Bot(BaseBotInternals, ABC):
         self.reset_movement()
         await self.send_intent()
 
-    def rescan(self):
+    # TODO: implement rescan
+    async def rescan(self):
         self.botIntent.rescan = True
-        self.send_intent()
+        await self.send_intent()
 
     # TODO: implement this properly
     # wait_for()

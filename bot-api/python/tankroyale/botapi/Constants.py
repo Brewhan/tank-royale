@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 
+# this can really screw with turning - be careful!
 @dataclass
 class Constants:
     BOUNDING_CIRCLE_RADIUS: int = 18

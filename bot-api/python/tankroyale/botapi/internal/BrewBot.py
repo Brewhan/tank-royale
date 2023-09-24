@@ -1,29 +1,50 @@
+import random
+
 from tankroyale.botapi.internal.Bot import Bot
-import asyncio
+
+
+def random_corner() -> int:
+    randint = random.randint(0, 3)
+    return 90 * randint
 
 
 class BrewBot(Bot):
+    enemies: float
+    corner = random_corner()
+    stop_when_see_enemy = False
 
-    # Called when bot starts
     async def run(self):
-        await self.forward(15.0)
-        await self.turn_left(45)
-        await self.forward(15.0)
-        await self.back(15.0)
-        # #TODO: turn left is very spinny - will have to look into this.
-        # await self.turn_left(100)
-        # await self.forward(1.0)
-        # await self.turn_right(45)
-        # await self.forward(1.0)
-        await self.turn_gun_left(45.0)
-        # await self.turn_gun_right(45.0)
-        # await self.turn_radar_left(100.0)
-        # await self.turn_radar_right(100.0)
+        await self.go_corner()
+
+        gun_increment: float = 3
+
+        while self.isRunning:
+            for i in range(0, 45):
+                await self.turn_gun_right(gun_increment)
+            gun_increment *= -1
+        else:
+            print("not running")
 
     async def on_scanned_bot(self, e):
-        await self.fire(1.0)
+        distance = self.distance_to(e['x'], e['y'])
+        if self.stop_when_see_enemy:
+            # await self.stop() # only use here once resume is implemented
+            await self.fire(5.0)
+            await self.rescan()  # this needs implementing
+            # await self.resume() # this needs implementing
+        else:
+            await self.fire(5.0)
+
+    async def go_corner(self):
+        self.stop_when_see_enemy = False
+        bearing = self.calc_bearing(random_corner())
+        await self.turn_left(bearing)
+        self.stop_when_see_enemy = True
+        await self.stop()
+        await self.forward(5000)
+        await self.turn_right(90)
+        await self.forward(5000)
+        await self.turn_gun_right(90)
 
 
-# AndyBot().on_round_started()
-
-BrewBot().start_bot('PBbMsuCpFZtmEaNAWjqOKQ')
+BrewBot().start_bot('ZDGYJOivwIyqvYQqCP4LOg')

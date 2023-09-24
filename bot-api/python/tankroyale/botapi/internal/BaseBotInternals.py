@@ -4,12 +4,12 @@ import dataclasses
 import json
 import math
 
-
 from websockets import connect
 from tankroyale.botapi.Constants import Constants
 from tankroyale.botapi.schemas.BotHandshake import BotHandshake
 from tankroyale.botapi.schemas.BotIntent import BotIntent
 from tankroyale.botapi.schemas.Message import Message
+
 
 class BaseBotInternals(ABC):
 
@@ -72,7 +72,9 @@ class BaseBotInternals(ABC):
             self.event = await ws.recv()
             if json.loads(self.event)['sessionId']:
                 self.set_running(True)
-            await ws.send(self.message(BotHandshake(name="Brew", version="1.0", sessionId=json.loads(self.event)['sessionId'], secret=server_secret)))
+            await ws.send(self.message(
+                BotHandshake(name="Brew", version="1.0", sessionId=json.loads(self.event)['sessionId'],
+                             secret=server_secret)))
             self.connection = ws
             while self.isRunning:
                 await self.handle_event_type(json.loads(self.event), self.connection)
@@ -82,20 +84,20 @@ class BaseBotInternals(ABC):
         match event['type']:
             case Message.GameStartedEventForBot:
                 await ws.send(self.message(BotIntent(type="BotReady")))
+                self.new_bot_intent()
+                self.on_round_started()
             case Message.RoundStartedEvent:
                 await ws.send(self.message(BotIntent(type="BotIntent")))
                 self.new_bot_intent()
                 self.on_round_started()
+            case Message.BotHitWallEvent:
+                self.distanceRemaining = 0
             case Message.TickEventForBot:
                 if event['turnNumber'] == 1:
+                    self.previousDirection = event['botState']['direction']
                     self.reset_movement()
                     await self.run()
                 # TODO: call relevant methods for each event
-                if len(event['events']) > 0:
-                    for e in event['events']:
-                        match e['type']:
-                            case Message.ScannedBotEvent:
-                                await self.on_scanned_bot(e)
                 else:
                     await self.send_intent()
 
@@ -129,11 +131,33 @@ class BaseBotInternals(ABC):
         self.botIntent.type = Message.BotIntent
         await ws.send(self.message(self.botIntent))
         self.event = await ws.recv()
-        if json.loads(self.event)['type'] == 'TickEventForBot': #try and move this higher
-            self.update_turn_remaining()
-            self.update_gun_turn_remaining()
-            self.update_radar_turn_remaining()
-            self.update_movement()
+        event = json.loads(self.event)
+        match event['type']:
+            case Message.GameStartedEventForBot:
+                await ws.send(self.message(BotIntent(type="BotReady")))
+                self.new_bot_intent()
+                self.on_round_started()
+            case Message.RoundStartedEvent:
+                await ws.send(self.message(BotIntent(type="BotIntent")))
+                self.new_bot_intent()
+                self.on_round_started()
+            case Message.TickEventForBot:# try and move this higher
+                if event['turnNumber'] == 1:
+                    self.previousDirection = event['botState']['direction']
+                    self.reset_movement()
+                    await self.run()
+                self.update_turn_remaining()
+                self.update_gun_turn_remaining()
+                self.update_radar_turn_remaining()
+                self.update_movement()
+                # a bit of a patch to handle stopping on the non-multithreaded-ness of the code
+                if len(event['events']) > 0:
+                    for e in event['events']:
+                        match e['type']:
+                            case Message.BotHitWallEvent:
+                                self.distanceRemaining = 0
+                            case Message.ScannedBotEvent:
+                                await self.on_scanned_bot(e)
 
     def message(self, data_class: dataclasses):
         return str(dataclasses.asdict(data_class, dict_factory=lambda x: {k: v for (k, v) in x if v is not None and v !=
@@ -142,7 +166,7 @@ class BaseBotInternals(ABC):
     async def start(self, url, secret):
         await self.connect(url, secret)
 
-    #TODO: assign event to types instead of using json loads
+    # TODO: assign event to types instead of using json loads
     async def update_movement_simple(self):
         if json.loads(self.event)['botState']['speed'] > 0:
             self.distanceRemaining -= json.loads(self.event)['botState']['speed']
@@ -161,7 +185,7 @@ class BaseBotInternals(ABC):
             if self.is_near_zero(self.turnRemaining):
                 self.turnRemaining = 0
         self.botIntent.turnRate = self.turnRemaining
-        
+
     def update_gun_turn_remaining(self):
         delta = self.calc_delta_angle(json.loads(self.event)['botState']['gunDirection'], self.previousGunDirection)
         self.previousGunDirection = json.loads(self.event)['botState']['gunDirection']
@@ -171,7 +195,7 @@ class BaseBotInternals(ABC):
             self.gunTurnRemaining -= delta
             if self.is_near_zero(self.gunTurnRemaining):
                 self.gunTurnRemaining = 0
-    
+
         self.botIntent.gunTurnRate = self.gunTurnRemaining
 
     def update_radar_turn_remaining(self):
@@ -199,7 +223,7 @@ class BaseBotInternals(ABC):
                 distance = 0
                 self.isOverDriving = False
 
-            if math.copysign(1, distance*new_speed) != -1:
+            if math.copysign(1, distance * new_speed) != -1:
                 self.isOverDriving = self.get_distance_travelled_until_stop(new_speed) > abs(distance)
 
             self.distanceRemaining = distance - new_speed
@@ -209,7 +233,7 @@ class BaseBotInternals(ABC):
             return -self.get_new_target_speed(-speed, -distance)
         target_speed = self.maxSpeed if distance == math.inf else min(self.maxSpeed, self.get_max_speed(distance))
 
-        return self.clamp(target_speed, speed - self.absDeceleration, speed + Constants.ACCELERATION) if speed >= 0\
+        return self.clamp(target_speed, speed - self.absDeceleration, speed + Constants.ACCELERATION) if speed >= 0 \
             else self.clamp(target_speed, speed - Constants.ACCELERATION, speed + self.get_max_deceleration(-speed))
 
     def get_max_speed(self, distance: float):
@@ -235,7 +259,8 @@ class BaseBotInternals(ABC):
     def is_near_zero(self, value: float) -> float:
         return abs(value) < .00001
 
-    def clamp(self, n, smallest: float, largest: float): return max(smallest, min(n, largest))
+    def clamp(self, n, smallest: float, largest: float):
+        return max(smallest, min(n, largest))
 
     def calc_delta_angle(self, target_angle: float, source_angle: float) -> float:
         angle = target_angle - source_angle
@@ -249,6 +274,44 @@ class BaseBotInternals(ABC):
             angle += 0
         # return min(y-x, y-x+2*math.pi, y-x-2*math.pi, key=abs)
         return angle
+
+    def _normalize_relative_angle2(self, angle: float) -> float:
+        angle = angle % 360
+        angle = (angle + 360) % 360
+        if angle > 180:
+            angle -= 360
+        return angle
+
+    def _normalize_relative_angle(self, angle: float) -> float:
+        if (angle % 360) >= 0:
+            if angle < 180:
+                return angle
+            else:
+                return angle - 360
+        else:
+            if angle >= -180:
+                return angle
+            else:
+                return angle + 360
+
+    def _normalize_absolute_angle(self, angle: float) -> float:
+        return angle if (angle % 360) > 0 else angle + 360
+
+    def calc_bearing(self, direction) -> float:
+        return self._normalize_relative_angle(direction - json.loads(self.event)['botState']['direction'])
+
+    def calc_gun_bearing(self, direction) -> float:
+        return self._normalize_relative_angle(direction - json.loads(self.event)['botState']['gunDirection'])
+
+    def calc_radar_bearing(self, direction) -> float:
+        return self._normalize_relative_angle(direction - json.loads(self.event)['botState']['radarDirection'])
+
+    def distance_to(self, x: float, y: float):
+        return math.hypot(x - json.loads(self.event)['botState']['x'], y - json.loads(self.event)['botState']['y'])
+
+    def direction_to(self, x: float, y: float):
+        return self._normalize_absolute_angle(math.degrees(
+            math.atan2(y - json.loads(self.event)['botState']['y'], x - json.loads(self.event)['botState']['x'])))
 
     def to_infinite_value(self, turn_rate: float) -> float:
         if turn_rate > 0:
@@ -276,5 +339,3 @@ class BaseBotInternals(ABC):
     @abstractmethod
     def on_scanned_bot(self, e):
         pass
-
-
