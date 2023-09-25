@@ -19,6 +19,7 @@ class BaseBotInternals(ABC):
         self.botIntent = None
         self.connection = None
         self.event = None
+        self.intentDepth = 0
 
         self.serverSecret = None
         self.serverUrl = None
@@ -38,10 +39,10 @@ class BaseBotInternals(ABC):
         self.maxGunTurnRate = Constants.MAX_GUN_TURN_RATE
         self.maxRadarTurnRate = Constants.MAX_RADAR_TURN_RATE
 
-        self.savedTargetSpeed: float
-        self.savedTurnRate: float
-        self.savedGunTurnRate: float
-        self.savedRadarTurnRate: float
+        self.savedTargetSpeed: float = 0
+        self.savedTurnRate: float = 0
+        self.savedGunTurnRate: float = 0
+        self.savedRadarTurnRate: float = 0
         self.turnRemaining: float = 0
         self.distanceRemaining: float = 0
         self.gunTurnRemaining: float = 0
@@ -77,10 +78,11 @@ class BaseBotInternals(ABC):
                              secret=server_secret)))
             self.connection = ws
             while self.isRunning:
-                await self.handle_event_type(json.loads(self.event), self.connection)
+
+                await self.handle_startup_event_type(json.loads(self.event), self.connection)
                 self.event = await self.connection.recv()
 
-    async def handle_event_type(self, event: dict, ws: any):
+    async def handle_startup_event_type(self, event: dict, ws: any):
         match event['type']:
             case Message.GameStartedEventForBot:
                 await ws.send(self.message(BotIntent(type="BotReady")))
@@ -126,38 +128,55 @@ class BaseBotInternals(ABC):
         self.botIntent.targetSpeed = 0
         self.botIntent.firepower = 0
 
+    def save_movement(self):
+        self.savedTargetSpeed = self.botIntent.targetSpeed
+        self.savedTurnRate = self.botIntent.turnRate
+        self.savedGunTurnRate = self.botIntent.gunTurnRate
+        self.savedRadarTurnRate = self.botIntent.radarTurnRate
+
+    def resume(self):
+        self.botIntent.targetSpeed = self.savedTargetSpeed
+        self.botIntent.turnRate = self.savedTurnRate
+        self.botIntent.gunTurnRate = self.savedGunTurnRate
+        self.botIntent.radarTurnRate = self.savedRadarTurnRate
+
     async def send_intent(self):
-        ws = self.connection
-        self.botIntent.type = Message.BotIntent
-        await ws.send(self.message(self.botIntent))
-        self.event = await ws.recv()
-        event = json.loads(self.event)
-        match event['type']:
-            case Message.GameStartedEventForBot:
-                await ws.send(self.message(BotIntent(type="BotReady")))
-                self.new_bot_intent()
-                self.on_round_started()
-            case Message.RoundStartedEvent:
-                await ws.send(self.message(BotIntent(type="BotIntent")))
-                self.new_bot_intent()
-                self.on_round_started()
-            case Message.TickEventForBot:# try and move this higher
-                if event['turnNumber'] == 1:
-                    self.previousDirection = event['botState']['direction']
-                    self.reset_movement()
-                    await self.run()
-                self.update_turn_remaining()
-                self.update_gun_turn_remaining()
-                self.update_radar_turn_remaining()
-                self.update_movement()
-                # a bit of a patch to handle stopping on the non-multithreaded-ness of the code
-                if len(event['events']) > 0:
-                    for e in event['events']:
-                        match e['type']:
-                            case Message.BotHitWallEvent:
-                                self.distanceRemaining = 0
-                            case Message.ScannedBotEvent:
-                                await self.on_scanned_bot(e)
+        try:
+            print(self.intentDepth)
+            ws = self.connection
+            self.botIntent.type = Message.BotIntent
+            await ws.send(self.message(self.botIntent))
+            self.event = await ws.recv()
+            event = json.loads(self.event)
+            match event['type']:
+                case Message.GameStartedEventForBot:
+                    await ws.send(self.message(BotIntent(type="BotReady")))
+                    self.new_bot_intent()
+                    self.on_round_started()
+                case Message.RoundStartedEvent:
+                    await ws.send(self.message(BotIntent(type="BotIntent")))
+                    self.new_bot_intent()
+                    self.on_round_started()
+                case Message.TickEventForBot:  # try and move this higher
+                    if event['turnNumber'] == 1:
+                        self.previousDirection = event['botState']['direction']
+                        self.reset_movement()
+                        await self.run()
+                    self.update_turn_remaining()
+                    self.update_gun_turn_remaining()
+                    self.update_radar_turn_remaining()
+                    self.update_movement()
+                    # a bit of a patch to handle stopping on the non-multithreaded-ness of the code
+                    if len(event['events']) > 0:
+                        for e in event['events']:
+                            match e['type']:
+                                case Message.BotHitWallEvent:
+                                    self.distanceRemaining = 0
+                                case Message.ScannedBotEvent:
+                                    await self.on_scanned_bot(e)
+        except RecursionError:
+            print("recursion error hack don't @ me")
+            return
 
     def message(self, data_class: dataclasses):
         return str(dataclasses.asdict(data_class, dict_factory=lambda x: {k: v for (k, v) in x if v is not None and v !=

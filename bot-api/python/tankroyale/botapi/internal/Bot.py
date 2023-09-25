@@ -106,7 +106,11 @@ class Bot(BaseBotInternals, ABC):
         self.botIntent.firepower = 0
         await self.send_intent()  ## THIS IS A DELIBERATE BUG - REMOVE ONCE TICK EVENT IS SENDING INTENTS EVERY TICK.
 
+    def get_energy(self) -> float:
+        return json.loads(self.event)['botState']['energy']
+
     async def stop(self):
+        self.save_movement()
         self.reset_movement()
         await self.send_intent()
 
