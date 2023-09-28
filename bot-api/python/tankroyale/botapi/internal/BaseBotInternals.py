@@ -1,3 +1,4 @@
+import asyncio
 from abc import abstractmethod, ABC
 
 import dataclasses
@@ -62,9 +63,12 @@ class BaseBotInternals(ABC):
 
         self.eventHandlingDisabled = False
 
+        self.queue = asyncio.Queue()
+
     # create a new websocket connection to the server with a given url and return the ws so it can be used to send intents
 
     async def connect(self, url: str, server_secret: str):
+
         if url == '':
             url = self.DEFAULT_SERVER_URL
         self.serverUrl = url
@@ -77,35 +81,19 @@ class BaseBotInternals(ABC):
                 BotHandshake(name="Brew", version="1.0", sessionId=json.loads(self.event)['sessionId'],
                              secret=server_secret)))
             self.connection = ws
-            while self.isRunning:
+            self.event = await self.connection.recv()
+            await self.handle_intent()
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            task = asyncio.create_task(self.worker(self.queue))
+            task2 = asyncio.create_task(self.ping(self.connection))
+            loop.run_until_complete(task)
 
-                await self.handle_startup_event_type(json.loads(self.event), self.connection)
-                self.event = await self.connection.recv()
-
-    async def handle_startup_event_type(self, event: dict, ws: any):
-        match event['type']:
-            case Message.GameStartedEventForBot:
-                await ws.send(self.message(BotIntent(type="BotReady")))
-                self.new_bot_intent()
-                self.on_round_started()
-            case Message.RoundStartedEvent:
-                await ws.send(self.message(BotIntent(type="BotIntent")))
-                self.new_bot_intent()
-                self.on_round_started()
-            case Message.BotHitWallEvent:
-                self.distanceRemaining = 0
-            case Message.TickEventForBot:
-                if event['turnNumber'] == 1:
-                    self.previousDirection = event['botState']['direction']
-                    self.reset_movement()
-                    await self.run()
-                # TODO: call relevant methods for each event
-                else:
-                    await self.send_intent()
-
-                # TODO: more event types please
-            case _:
-                pass
+    async def ping(self, connection):
+        while True:
+            await connection.send('{"message":"PING"}')
+            print("ping")
+            await asyncio.sleep(5)
 
     def set_running(self, isRunning: bool):
         self.isRunning = isRunning
@@ -140,23 +128,48 @@ class BaseBotInternals(ABC):
         self.botIntent.gunTurnRate = self.savedGunTurnRate
         self.botIntent.radarTurnRate = self.savedRadarTurnRate
 
-    async def send_intent(self):
+    async def send_and_recv(self, botIntent):
+        ws = self.connection
+        self.botIntent.type = Message.BotIntent
+        print("send")
+        await ws.send(self.message(botIntent))
+        self.event = await ws.recv()
+        print("recv")
+
+    async def send_intent(self, queue):
+        queue.put_nowait(self.botIntent)
+
+    async def worker(self, queue):
+        print(1)
+        while self.isRunning:
+            print(2)
+            work_item = await queue.get()
+            print(3)
+            print(work_item)
+            await self.send_and_recv(work_item)
+            print(4)
+            queue.task_done()
+            print(5)
+            await self.handle_intent()
+            print(6)
+        print(7)
+
+    async def handle_intent(self):
         try:
-            print(self.intentDepth)
-            ws = self.connection
-            self.botIntent.type = Message.BotIntent
-            await ws.send(self.message(self.botIntent))
-            self.event = await ws.recv()
             event = json.loads(self.event)
             match event['type']:
                 case Message.GameStartedEventForBot:
-                    await ws.send(self.message(BotIntent(type="BotReady")))
                     self.new_bot_intent()
                     self.on_round_started()
+                    self.botIntent = BotIntent(type="BotReady")
+                    await self.send_intent(self.queue)
+                    self.new_bot_intent()
                 case Message.RoundStartedEvent:
-                    await ws.send(self.message(BotIntent(type="BotIntent")))
                     self.new_bot_intent()
                     self.on_round_started()
+                    self.botIntent = BotIntent(type="BotIntent")
+                    await self.send_intent(self.queue)
+                    self.new_bot_intent()
                 case Message.TickEventForBot:  # try and move this higher
                     if event['turnNumber'] == 1:
                         self.previousDirection = event['botState']['direction']
@@ -172,8 +185,8 @@ class BaseBotInternals(ABC):
                             match e['type']:
                                 case Message.BotHitWallEvent:
                                     self.distanceRemaining = 0
-                                case Message.ScannedBotEvent:
-                                    await self.on_scanned_bot(e)
+                                # case Message.ScannedBotEvent:
+                                #     await self.on_scanned_bot(e)
         except RecursionError:
             print("recursion error hack don't @ me")
             return
@@ -181,9 +194,6 @@ class BaseBotInternals(ABC):
     def message(self, data_class: dataclasses):
         return str(dataclasses.asdict(data_class, dict_factory=lambda x: {k: v for (k, v) in x if v is not None and v !=
                                                                           ''}))
-
-    async def start(self, url, secret):
-        await self.connect(url, secret)
 
     # TODO: assign event to types instead of using json loads
     async def update_movement_simple(self):

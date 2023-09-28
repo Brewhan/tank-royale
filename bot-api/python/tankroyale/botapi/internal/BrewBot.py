@@ -1,3 +1,4 @@
+import asyncio
 import random
 from tankroyale.botapi.internal.Bot import Bot
 
@@ -56,4 +57,4 @@ class BrewBot(Bot):
             await self.fire(3)
 
 
-BrewBot().start_bot('ZDGYJOivwIyqvYQqCP4LOg')
+asyncio.run(BrewBot().connect('', 'ZDGYJOivwIyqvYQqCP4LOg'))
