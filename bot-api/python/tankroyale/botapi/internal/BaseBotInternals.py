@@ -47,6 +47,7 @@ class BaseBotInternals(ABC):
         self.distanceRemaining: float = 0
         self.gunTurnRemaining: float = 0
         self.radarTurnRemaining: float = 0
+        self.enemySpotted: bool = False
 
         self.previousDirection: float = 0
         self.previousGunDirection: float = 0
@@ -77,10 +78,14 @@ class BaseBotInternals(ABC):
                 BotHandshake(name="Brew", version="1.0", sessionId=json.loads(self.event)['sessionId'],
                              secret=server_secret)))
             self.connection = ws
-            while self.isRunning:
-
-                await self.handle_startup_event_type(json.loads(self.event), self.connection)
-                self.event = await self.connection.recv()
+            self.new_bot_intent()
+            while True:
+                print(1)
+                if not self.isRunning:
+                    self.set_running(True)
+                    await self.send_intent()
+                await self.handle_event()
+                await self.send_intent()
 
     async def handle_startup_event_type(self, event: dict, ws: any):
         match event['type']:
@@ -140,13 +145,39 @@ class BaseBotInternals(ABC):
         self.botIntent.gunTurnRate = self.savedGunTurnRate
         self.botIntent.radarTurnRate = self.savedRadarTurnRate
 
+    def is_enemy_detected(self) -> bool:
+        event = json.loads(self.event)
+        if event['type'] == Message.TickEventForBot:
+            if len(event['events']) > 0:
+                for e in event['events']:
+                    match e['type']:
+                        case Message.ScannedBotEvent:
+                            return True
+                        case _:
+                            return False
+
     async def send_intent(self):
+        ws = self.connection
+        self.botIntent.type = Message.BotIntent
+        await ws.send(self.message(self.botIntent))
+        self.event = await ws.recv()
+        event = json.loads(self.event)
+        if json.loads(self.event)['type'] == Message.RoundEndedEvent:
+            self.set_running(False)
+        if json.loads(self.event)['type'] == Message.TickEventForBot:
+            self.update_positions()
+            if len(event['events']) > 0:
+                for e in event['events']:
+                    match e['type']:
+                        case Message.BotHitWallEvent:
+                            self.distanceRemaining = 0
+                        case Message.ScannedBotEvent:
+                            self.enemySpotted = True
+                            await self.on_scanned_bot(e)
+
+    async def handle_event(self):
         try:
-            print(self.intentDepth)
             ws = self.connection
-            self.botIntent.type = Message.BotIntent
-            await ws.send(self.message(self.botIntent))
-            self.event = await ws.recv()
             event = json.loads(self.event)
             match event['type']:
                 case Message.GameStartedEventForBot:
@@ -158,22 +189,13 @@ class BaseBotInternals(ABC):
                     self.new_bot_intent()
                     self.on_round_started()
                 case Message.TickEventForBot:  # try and move this higher
+                    self.update_positions()
                     if event['turnNumber'] == 1:
                         self.previousDirection = event['botState']['direction']
                         self.reset_movement()
                         await self.run()
-                    self.update_turn_remaining()
-                    self.update_gun_turn_remaining()
-                    self.update_radar_turn_remaining()
-                    self.update_movement()
                     # a bit of a patch to handle stopping on the non-multithreaded-ness of the code
-                    if len(event['events']) > 0:
-                        for e in event['events']:
-                            match e['type']:
-                                case Message.BotHitWallEvent:
-                                    self.distanceRemaining = 0
-                                case Message.ScannedBotEvent:
-                                    await self.on_scanned_bot(e)
+
         except RecursionError:
             print("recursion error hack don't @ me")
             return
@@ -246,6 +268,13 @@ class BaseBotInternals(ABC):
                 self.isOverDriving = self.get_distance_travelled_until_stop(new_speed) > abs(distance)
 
             self.distanceRemaining = distance - new_speed
+
+    def update_positions(self):
+        self.update_turn_remaining()
+        self.update_gun_turn_remaining()
+        self.update_radar_turn_remaining()
+        self.update_movement()
+        self.enemySpotted = False
 
     def get_new_target_speed(self, speed, distance) -> float:
         if distance < 0:
