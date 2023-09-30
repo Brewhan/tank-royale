@@ -1,4 +1,5 @@
 import asyncio
+import nest_asyncio
 from abc import abstractmethod, ABC
 
 import dataclasses
@@ -10,6 +11,8 @@ from tankroyale.botapi.Constants import Constants
 from tankroyale.botapi.schemas.BotHandshake import BotHandshake
 from tankroyale.botapi.schemas.BotIntent import BotIntent
 from tankroyale.botapi.schemas.Message import Message
+
+nest_asyncio.apply()
 
 
 class BaseBotInternals(ABC):
@@ -86,7 +89,6 @@ class BaseBotInternals(ABC):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             task = asyncio.create_task(self.worker(self.queue))
-            task2 = asyncio.create_task(self.ping(self.connection))
             loop.run_until_complete(task)
 
     async def ping(self, connection):
@@ -131,28 +133,18 @@ class BaseBotInternals(ABC):
     async def send_and_recv(self, botIntent):
         ws = self.connection
         self.botIntent.type = Message.BotIntent
-        print("send")
         await ws.send(self.message(botIntent))
         self.event = await ws.recv()
-        print("recv")
 
     async def send_intent(self, queue):
         queue.put_nowait(self.botIntent)
 
     async def worker(self, queue):
-        print(1)
-        while self.isRunning:
-            print(2)
+        while True:
             work_item = await queue.get()
-            print(3)
-            print(work_item)
             await self.send_and_recv(work_item)
-            print(4)
             queue.task_done()
-            print(5)
             await self.handle_intent()
-            print(6)
-        print(7)
 
     async def handle_intent(self):
         try:
