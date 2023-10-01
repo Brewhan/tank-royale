@@ -29,7 +29,6 @@ class BrewBot(Bot):
         distance = self.distance_to(e['x'], e['y'])
         while self.stop_when_see_enemy and self.is_enemy_detected():
             try:
-                print("detected")
                 # await self.stop()
                 await self.smart_fire(distance)
                 await self.rescan()  # this needs implementing
@@ -37,7 +36,6 @@ class BrewBot(Bot):
             except RecursionError:
                 print("recursion error hack don't @ me")
                 return
-        print("no enemy")
         return
 
     async def go_corner(self):

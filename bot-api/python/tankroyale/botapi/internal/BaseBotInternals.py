@@ -1,3 +1,4 @@
+import asyncio
 from abc import abstractmethod, ABC
 
 import dataclasses
@@ -82,35 +83,11 @@ class BaseBotInternals(ABC):
             while True:
                 print(1)
                 if not self.isRunning:
+                    print("set running")
                     self.set_running(True)
                     await self.send_intent()
-                await self.handle_event()
+                await self.handle_event(self.event)
                 await self.send_intent()
-
-    async def handle_startup_event_type(self, event: dict, ws: any):
-        match event['type']:
-            case Message.GameStartedEventForBot:
-                await ws.send(self.message(BotIntent(type="BotReady")))
-                self.new_bot_intent()
-                self.on_round_started()
-            case Message.RoundStartedEvent:
-                await ws.send(self.message(BotIntent(type="BotIntent")))
-                self.new_bot_intent()
-                self.on_round_started()
-            case Message.BotHitWallEvent:
-                self.distanceRemaining = 0
-            case Message.TickEventForBot:
-                if event['turnNumber'] == 1:
-                    self.previousDirection = event['botState']['direction']
-                    self.reset_movement()
-                    await self.run()
-                # TODO: call relevant methods for each event
-                else:
-                    await self.send_intent()
-
-                # TODO: more event types please
-            case _:
-                pass
 
     def set_running(self, isRunning: bool):
         self.isRunning = isRunning
@@ -122,6 +99,7 @@ class BaseBotInternals(ABC):
     def on_round_started(self):
         self.reset_movement()
         self.isStopped = False
+        self.isRunning = True
 
     def new_bot_intent(self):
         self.botIntent = BotIntent()
@@ -132,6 +110,7 @@ class BaseBotInternals(ABC):
         self.botIntent.radarTurnRate = 0
         self.botIntent.targetSpeed = 0
         self.botIntent.firepower = 0
+        self.distanceRemaining = 0
 
     def save_movement(self):
         self.savedTargetSpeed = self.botIntent.targetSpeed
@@ -163,8 +142,9 @@ class BaseBotInternals(ABC):
         self.event = await ws.recv()
         event = json.loads(self.event)
         if json.loads(self.event)['type'] == Message.RoundEndedEvent:
+            print("round ended")
             self.set_running(False)
-        if json.loads(self.event)['type'] == Message.TickEventForBot:
+        elif json.loads(self.event)['type'] == Message.TickEventForBot:
             self.update_positions()
             if len(event['events']) > 0:
                 for e in event['events']:
@@ -174,14 +154,28 @@ class BaseBotInternals(ABC):
                         case Message.ScannedBotEvent:
                             self.enemySpotted = True
                             await self.on_scanned_bot(e)
+                        case Message.RoundStartedEvent:
+                            await ws.send(self.message(BotIntent(type="BotIntent")))
+                            self.new_bot_intent()
+                            self.on_round_started()
+                        case Message.TickEventForBot:  # try and move this higher
+                            self.update_positions()
+                            if event['turnNumber'] == 1:
+                                self.previousDirection = event['botState']['direction']
+                                self.reset_movement()
+                                await self.run()
+        else:
+            print(event['type'])
 
-    async def handle_event(self):
+
+    async def handle_event(self, event):
         try:
             ws = self.connection
-            event = json.loads(self.event)
+            event = json.loads(event)
             match event['type']:
                 case Message.GameStartedEventForBot:
                     await ws.send(self.message(BotIntent(type="BotReady")))
+                    print("ready")
                     self.new_bot_intent()
                     self.on_round_started()
                 case Message.RoundStartedEvent:
@@ -193,7 +187,11 @@ class BaseBotInternals(ABC):
                     if event['turnNumber'] == 1:
                         self.previousDirection = event['botState']['direction']
                         self.reset_movement()
+                        print("run")
                         await self.run()
+                case _:
+                    print(event['type'])
+                    await asyncio.sleep(1)
                     # a bit of a patch to handle stopping on the non-multithreaded-ness of the code
 
         except RecursionError:
