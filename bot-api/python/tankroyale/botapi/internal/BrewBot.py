@@ -15,7 +15,7 @@ class BrewBot(Bot):
 
     async def run(self):
         try:
-            # await self.reset_to_zero() ## super broken
+            await self.reset_to_zero() ## super broken
             await self.go_corner()
 
             gun_increment: float = 1

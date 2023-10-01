@@ -17,10 +17,10 @@ class Bot(BaseBotInternals, ABC):
     async def reset_to_zero(self):
         match json.loads(self.event)['type']:
             case Message.TickEventForBot:
-                bearing = self.calc_gun_bearing(0)
-                bearing2 = self.calc_bearing(0)
-                await self.turn_left(bearing2)
-                await self.turn_gun_left(bearing)
+                bearing = self.calc_bearing(0)
+                await self.turn_left(bearing)
+                bearing2 = self.calc_gun_bearing(0)
+                await self.turn_gun_left(bearing2)
             case _:
                 pass
 
