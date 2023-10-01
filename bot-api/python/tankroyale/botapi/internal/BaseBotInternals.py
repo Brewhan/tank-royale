@@ -53,6 +53,8 @@ class BaseBotInternals(ABC):
         self.previousGunDirection: float = 0
         self.previousRadarDirection: float = 0
 
+        self.roundNumber: int = 0
+
         self.botIntent: BotIntent
         # self.tickEvent: TickEvent.TickEvent
 
@@ -79,13 +81,23 @@ class BaseBotInternals(ABC):
                              secret=server_secret)))
             self.connection = ws
             self.new_bot_intent()
+            event = json.loads(self.event)
             while True:
                 print(1)
                 if not self.isRunning:
+                    print("not running flag set")
                     self.set_running(True)
-                    await self.send_intent()
-                await self.handle_event()
+                    print("handle startup event")
+                    print(event)
+                    await self.handle_startup_event_type(event, self.connection)
+                    print("startup event handle complete")
+                else:
+                    print("handle event")
+                    await self.handle_event()
+                    print("handle event complete")
+                print("send intent")
                 await self.send_intent()
+                print("send intent complete")
 
     async def handle_startup_event_type(self, event: dict, ws: any):
         match event['type']:
@@ -95,6 +107,7 @@ class BaseBotInternals(ABC):
                 self.on_round_started()
             case Message.RoundStartedEvent:
                 await ws.send(self.message(BotIntent(type="BotIntent")))
+                print("found round started in handle")
                 self.new_bot_intent()
                 self.on_round_started()
             case Message.BotHitWallEvent:
@@ -103,14 +116,25 @@ class BaseBotInternals(ABC):
                 if event['turnNumber'] == 1:
                     self.previousDirection = event['botState']['direction']
                     self.reset_movement()
+                    print("run")
                     await self.run()
                 # TODO: call relevant methods for each event
-                else:
-                    await self.send_intent()
+                # else:
+                #     print("else")
+                #     await self.send_intent()
 
                 # TODO: more event types please
             case _:
-                pass
+                print("handle startup: " + event['type'])
+
+                self.distanceRemaining = 0
+                self.set_running(True)
+                self.new_bot_intent()
+                self.on_round_started()
+                self.reset_movement()
+                print(self.botIntent)
+                print("running the bot")
+                await self.run()
 
     def set_running(self, isRunning: bool):
         self.isRunning = isRunning
@@ -162,10 +186,28 @@ class BaseBotInternals(ABC):
         await ws.send(self.message(self.botIntent))
         self.event = await ws.recv()
         event = json.loads(self.event)
-        if json.loads(self.event)['type'] == Message.RoundEndedEvent:
+        print(event)
+        if event['type'] == Message.RoundEndedEvent:
+            print("found round ended event in send_intent")
             self.set_running(False)
+
+        if event['type'] == Message.RoundStartedEvent:
+            print("found round started event in send_intent")
+            self.set_running(False)
+            self.new_bot_intent()
+            self.on_round_started()
+
+        if event['type'] != Message.GameStartedEventForBot:
+            if event['roundNumber'] > self.roundNumber:  # unreliable - this can get missed
+                self.roundNumber += 1
+                self.set_running(False)
+
         if json.loads(self.event)['type'] == Message.TickEventForBot:
             self.update_positions()
+            if event['turnNumber'] == 1 or event['turnNumber'] == 2: ##dirty fix  :
+                self.previousDirection = event['botState']['direction']
+                self.reset_movement()
+                await self.run()
             if len(event['events']) > 0:
                 for e in event['events']:
                     match e['type']:
@@ -184,16 +226,22 @@ class BaseBotInternals(ABC):
                     await ws.send(self.message(BotIntent(type="BotReady")))
                     self.new_bot_intent()
                     self.on_round_started()
+                case Message.RoundEndedEvent:
+                    self.roundNumber += 1
+                    self.set_running(False)
                 case Message.RoundStartedEvent:
                     await ws.send(self.message(BotIntent(type="BotIntent")))
+                    print("found round started event")
                     self.new_bot_intent()
                     self.on_round_started()
                 case Message.TickEventForBot:  # try and move this higher
                     self.update_positions()
-                    if event['turnNumber'] == 1:
+                    if event['turnNumber'] == 1 or event['turnNumber'] == 2: ##dirty fix  :
                         self.previousDirection = event['botState']['direction']
                         self.reset_movement()
                         await self.run()
+                case _:
+                    print(event['type'])
                     # a bit of a patch to handle stopping on the non-multithreaded-ness of the code
 
         except RecursionError:

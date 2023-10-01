@@ -14,22 +14,23 @@ class BrewBot(Bot):
     counter = 0
 
     async def run(self):
-        await self.go_corner()
+        try:
+            await self.go_corner()
 
-        gun_increment: float = 1
+            gun_increment: float = 1
 
-        while self.isRunning:
-            for i in range(0, 90):
-                await self.turn_gun_right(gun_increment)
-            gun_increment *= -1
-        else:
-            print("not running")
+            while self.isRunning:
+                for i in range(0, 90):
+                    await self.turn_gun_right(gun_increment)
+                gun_increment *= -1
+        except KeyError:  # ignore non processable events
+            return
+
 
     async def on_scanned_bot(self, e):
         distance = self.distance_to(e['x'], e['y'])
-        while self.stop_when_see_enemy and self.is_enemy_detected():
+        while self.stop_when_see_enemy and self.is_enemy_detected() and self.isRunning:
             try:
-                print("detected")
                 # await self.stop()
                 await self.smart_fire(distance)
                 await self.rescan()  # this needs implementing
@@ -37,7 +38,6 @@ class BrewBot(Bot):
             except RecursionError:
                 print("recursion error hack don't @ me")
                 return
-        print("no enemy")
         return
 
     async def go_corner(self):
