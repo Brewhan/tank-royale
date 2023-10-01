@@ -4,6 +4,8 @@ from tankroyale.botapi.internal.BaseBotInternals import BaseBotInternals
 import asyncio
 import json
 
+from tankroyale.botapi.schemas.Message import Message
+
 
 class Bot(BaseBotInternals, ABC):
 
@@ -11,6 +13,17 @@ class Bot(BaseBotInternals, ABC):
 
     # TODO: implement this properly - the issue here is that we need to understand
     #  distance remaining and loop the dispatch of the intent until it has gotten where it needs to go
+
+    async def reset_to_zero(self):
+        match json.loads(self.event)['type']:
+            case Message.TickEventForBot:
+                bearing = self.calc_gun_bearing(0)
+                bearing2 = self.calc_bearing(0)
+                await self.turn_left(bearing2)
+                await self.turn_gun_left(bearing)
+            case _:
+                pass
+
     async def forward(self, distance: float):
         if self.isStopped:
             await self.send_intent()

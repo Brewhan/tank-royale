@@ -126,18 +126,21 @@ class BaseBotInternals(ABC):
                 # TODO: more event types please
             case _:
                 print("handle startup: " + event['type'])
-
+                print(self.botIntent)
+                print(str(event))
                 self.distanceRemaining = 0
                 self.set_running(True)
                 self.new_bot_intent()
                 self.on_round_started()
-                self.reset_movement()
                 print(self.botIntent)
                 print("running the bot")
+                await self.reset_to_zero()
                 await self.run()
 
     def set_running(self, isRunning: bool):
         self.isRunning = isRunning
+
+
 
     @abstractmethod
     async def run(self):
