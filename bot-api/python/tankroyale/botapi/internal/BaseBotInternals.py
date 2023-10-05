@@ -56,7 +56,6 @@ class BaseBotInternals(ABC):
         self.roundNumber: int = 0
 
         self.botIntent: BotIntent
-        # self.tickEvent: TickEvent.TickEvent
 
         self.isRunning = False
         self.isStopped = False
@@ -93,7 +92,7 @@ class BaseBotInternals(ABC):
                     await self.handle_startup_event_type(event, self.connection)
                 else:
                     print("connect: handle event if set_running true")
-                    await self.handle_event()
+                    await self.handle_logistical_event()
                 print("connect: send intent")
                 if self.isGameRunning:  # Otherwise if the game ends we enter this again!
                     await self.send_intent()
@@ -232,31 +231,31 @@ class BaseBotInternals(ABC):
             print("send_intent: Recursion Error")
             return
 
-    async def handle_event(self):
+    async def handle_logistical_event(self):
         try:
             ws = self.connection
             event = json.loads(self.event)
             match event['type']:
                 case Message.GameStartedEventForBot:
-                    print("handle_event: game started event")
+                    print("handle_logistical_event: game started event")
                     await ws.send(self.message(BotIntent(type="BotReady")))
                     self.new_bot_intent()
                     self.on_round_started()
                 case Message.RoundEndedEvent:
-                    print("handle_event: round ended event")
+                    print("handle_logistical_event: round ended event")
                     self.roundNumber += 1
                     self.set_running(False)
                 case Message.GameAbortedEvent:
-                    print("handle_event: game aborted event")
+                    print("handle_logistical_event: game aborted event")
                     self.isGameRunning = False
                 case Message.GameEndedEventForBot:
-                    print("handle_event: game ended event for bot")
+                    print("handle_logistical_event: game ended event for bot")
                     self.isGameRunning = False
                 case _:
-                    print("handle_event: unknown event " + str(event['type']))
+                    print("handle_logistical_event: unknown event " + str(event['type']))
 
         except RecursionError:
-            print("handle_event: recursion error")
+            print("handle_logistical_event: recursion error")
             return
 
     def message(self, data_class: dataclasses):
