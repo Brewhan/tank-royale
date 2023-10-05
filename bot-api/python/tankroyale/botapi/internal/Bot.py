@@ -114,10 +114,11 @@ class Bot(BaseBotInternals, ABC):
 
     async def fire(self, firepower: float):
         self.botIntent.firepower = firepower
-        await self.send_intent()
+        await self.connection.send(self.message(self.botIntent))
+        await self.connection.recv()
         # stop firing after first shot
-        self.botIntent.firepower = 0
-        await self.send_intent()  ## THIS IS A DELIBERATE BUG - REMOVE ONCE TICK EVENT IS SENDING INTENTS EVERY TICK.
+        # self.botIntent.firepower = 0
+        # await self.send_intent()  ## THIS IS A DELIBERATE BUG - REMOVE ONCE TICK EVENT IS SENDING INTENTS EVERY TICK.
 
     def get_energy(self) -> float:
         return json.loads(self.event)['botState']['energy']

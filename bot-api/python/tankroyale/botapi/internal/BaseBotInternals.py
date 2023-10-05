@@ -6,6 +6,7 @@ import math
 
 from websockets import connect
 from tankroyale.botapi.Constants import Constants
+from tankroyale.botapi.schemas.BotState import BotState
 from tankroyale.botapi.schemas.BotHandshake import BotHandshake
 from tankroyale.botapi.schemas.BotIntent import BotIntent
 from tankroyale.botapi.schemas.Message import Message
@@ -412,12 +413,13 @@ class BaseBotInternals(ABC):
     def calc_radar_bearing(self, direction) -> float:
         return self._normalize_relative_angle(direction - json.loads(self.event)['botState']['radarDirection'])
 
-    def distance_to(self, x: float, y: float):
-        return math.hypot(x - json.loads(self.event)['botState']['x'], y - json.loads(self.event)['botState']['y'])
+    def distance_to(self, xy):
+        print("second sig")
+        return math.hypot(xy['x'] - json.loads(self.event)['botState']['x'], xy['y'] - json.loads(self.event)['botState']['y'])
 
-    def direction_to(self, x: float, y: float):
+    def direction_to(self, xy):
         return self._normalize_absolute_angle(math.degrees(
-            math.atan2(y - json.loads(self.event)['botState']['y'], x - json.loads(self.event)['botState']['x'])))
+            math.atan2(xy['y'] - json.loads(self.event)['botState']['y'], xy['x'] - json.loads(self.event)['botState']['x'])))
 
     def to_infinite_value(self, turn_rate: float) -> float:
         if turn_rate > 0:

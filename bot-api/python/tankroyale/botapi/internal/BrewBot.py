@@ -15,7 +15,7 @@ class BrewBot(Bot):
 
     async def run(self):
         try:
-            await self.reset_to_zero() ## super broken
+            await self.reset_to_zero()
             await self.go_corner()
 
             gun_increment: float = 1
@@ -27,19 +27,10 @@ class BrewBot(Bot):
         except KeyError:  # ignore non processable events
             return
 
-
-    async def on_scanned_bot(self, e):
-        distance = self.distance_to(e['x'], e['y'])
+    async def on_scanned_bot(self, scanned_bot):
         while self.stop_when_see_enemy and self.is_enemy_detected() and self.isRunning:
-            try:
-                # await self.stop()
-                await self.smart_fire(distance)
-                await self.rescan()  # this needs implementing
-                # self.resume()
-            except RecursionError:
-                print("recursion error hack don't @ me")
-                return
-        return
+            await self.smart_fire(self.distance_to(scanned_bot))
+            await self.rescan()  # this needs implementing
 
     async def go_corner(self):
         self.stop_when_see_enemy = False
@@ -54,21 +45,12 @@ class BrewBot(Bot):
 
     async def smart_fire(self, distance: float):
         if distance > 200 or self.get_energy() < 15:
-            self.botIntent.firepower = 1
-            await self.connection.send(self.message(self.botIntent))
-            await self.connection.recv()
+            await self.fire(1)
         elif distance > 50:
-            self.botIntent.firepower = 2
             await self.fire(2)
-            await self.connection.send(self.message(self.botIntent))
-            await self.connection.recv()
         else:
-            self.botIntent.firepower = 3
-            await self.connection.send(self.message(self.botIntent))
-            await self.connection.recv()
-        self.botIntent.firepower = 0
-        await self.connection.send(self.message(self.botIntent))
-        await self.connection.recv()
+            await self.fire(3)
+        await self.fire(0)
 
 
 BrewBot().start_bot('ZDGYJOivwIyqvYQqCP4LOg')
