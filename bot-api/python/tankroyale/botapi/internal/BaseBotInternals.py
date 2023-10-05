@@ -60,6 +60,7 @@ class BaseBotInternals(ABC):
 
         self.isRunning = False
         self.isStopped = False
+        self.isGameRunning = False
 
         self.absDeceleration = abs(Constants.DECELERATION)
 
@@ -75,6 +76,7 @@ class BaseBotInternals(ABC):
         async with connect(url) as ws:
             self.event = await ws.recv()
             if json.loads(self.event)['sessionId']:
+
                 self.set_running(True)
             await ws.send(self.message(
                 BotHandshake(name="Brew", version="1.0", sessionId=json.loads(self.event)['sessionId'],
@@ -82,7 +84,8 @@ class BaseBotInternals(ABC):
             self.connection = ws
             self.new_bot_intent()
             event = json.loads(self.event)
-            while True:
+            self.isGameRunning = True
+            while self.isGameRunning:
                 if not self.isRunning:
                     print("connect: not running flag set")
                     self.set_running(True)
@@ -92,7 +95,11 @@ class BaseBotInternals(ABC):
                     print("connect: handle event if set_running true")
                     await self.handle_event()
                 print("connect: send intent")
-                await self.send_intent()
+                if self.isGameRunning:  # Otherwise if the game ends we enter this again!
+                    await self.send_intent()
+            else:
+                print("connect: detected game running is false.")
+                return
 
     async def handle_startup_event_type(self, event: dict, ws: any):
         match event['type']:
@@ -239,19 +246,12 @@ class BaseBotInternals(ABC):
                     print("handle_event: round ended event")
                     self.roundNumber += 1
                     self.set_running(False)
-                case Message.RoundStartedEvent:
-                    await ws.send(self.message(BotIntent(type="BotIntent")))
-                    print("handle_event: round started event")
-                    self.new_bot_intent()
-                    self.on_round_started()
-                case Message.TickEventForBot:  # try and move this higher
-                    print("handle event: tick event")
-                    self.update_positions()
-                    if event['turnNumber'] == 1:  ##dirty fix  :
-                        print("handle_event: turn number 1")
-                        self.previousDirection = event['botState']['direction']
-                        self.reset_movement()
-                        await self.run()
+                case Message.GameAbortedEvent:
+                    print("handle_event: game aborted event")
+                    self.isGameRunning = False
+                case Message.GameEndedEventForBot:
+                    print("handle_event: game ended event for bot")
+                    self.isGameRunning = False
                 case _:
                     print("handle_event: unknown event " + str(event['type']))
 
