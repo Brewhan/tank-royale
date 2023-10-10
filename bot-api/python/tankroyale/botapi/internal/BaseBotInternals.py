@@ -228,6 +228,9 @@ class BaseBotInternals(ABC):
                                 print("send_intent: scanned bot event")
                                 self.enemySpotted = True
                                 await self.on_scanned_bot(e)
+                            case Message.BotHitBotEvent:
+                                print("send_intent: bot hit bot event")
+                                await self.on_hit_bot(e)
         except RecursionError:
             print("send_intent: Recursion Error")
             return
@@ -414,10 +417,9 @@ class BaseBotInternals(ABC):
         return self._normalize_relative_angle(direction - json.loads(self.event)['botState']['radarDirection'])
 
     def distance_to(self, xy):
-        print("second sig")
         return math.hypot(xy['x'] - json.loads(self.event)['botState']['x'], xy['y'] - json.loads(self.event)['botState']['y'])
 
-    def direction_to(self, xy):
+    def bearing_to(self, xy):
         return self._normalize_absolute_angle(math.degrees(
             math.atan2(xy['y'] - json.loads(self.event)['botState']['y'], xy['x'] - json.loads(self.event)['botState']['x'])))
 
@@ -446,4 +448,9 @@ class BaseBotInternals(ABC):
 
     @abstractmethod
     def on_scanned_bot(self, e):
+        pass
+
+
+    @abstractmethod
+    def on_hit_bot(self, e):
         pass
