@@ -1,7 +1,9 @@
+from abc import ABC
+
 from tankroyale.botapi.internal.Bot import Bot
 
 
-class BrewBot(Bot):
+class BrewBot(Bot, ABC):
 
     async def run(self):
         try:
@@ -14,5 +16,11 @@ class BrewBot(Bot):
             await self.fire(1)
             await self.fire(0)  # always turn the gun off after use - only polite.
 
+    async def on_hit_wall(self, e):
+        pass
 
-BrewBot().start_bot('ZDGYJOivwIyqvYQqCP4LOg')
+    async def on_hit_bot(self, e):
+        pass
+
+
+BrewBot().start_bot('ZDGYJOivwIyqvYQqCP4LOg', 'BrewBlank')

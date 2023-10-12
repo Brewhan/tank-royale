@@ -68,7 +68,7 @@ class BaseBotInternals(ABC):
 
     # create a new websocket connection to the server with a given url and return the ws so it can be used to send intents
 
-    async def connect(self, url: str, server_secret: str):
+    async def connect(self, url: str, server_secret: str, bot_name: str):
         if url == '':
             url = self.DEFAULT_SERVER_URL
         self.serverUrl = url
@@ -76,10 +76,9 @@ class BaseBotInternals(ABC):
         async with connect(url) as ws:
             self.event = await ws.recv()
             if json.loads(self.event)['sessionId']:
-
                 self.set_running(True)
             await ws.send(self.message(
-                BotHandshake(name="Brew", version="1.0", sessionId=json.loads(self.event)['sessionId'],
+                BotHandshake(name=bot_name, version="1.0", sessionId=json.loads(self.event)['sessionId'],
                              secret=server_secret)))
             self.connection = ws
             self.new_bot_intent()
@@ -204,13 +203,16 @@ class BaseBotInternals(ABC):
                 self.on_round_started()
 
             if event['type'] != Message.GameStartedEventForBot:  # consider this a dragon. delete at your peril
-                print("send_intent: check for round number increment")
-                print(event)
-                if event['roundNumber'] > self.roundNumber:
-                    self.roundNumber += 1
-                    self.set_running(False)
+                try:
+                    print("send_intent: check for round number increment")
+                    print("send_intent: " + str(event))
+                    if event['roundNumber'] > self.roundNumber:
+                        self.roundNumber += 1
+                        self.set_running(False)
+                except KeyError:
+                    print("cannot check: " + event['type'])
 
-            if json.loads(self.event)['type'] == Message.TickEventForBot:
+            if event['type'] == Message.TickEventForBot:
                 print("send_intent: tick event")
                 self.update_positions()
                 if event['turnNumber'] == 1:
@@ -224,6 +226,7 @@ class BaseBotInternals(ABC):
                             case Message.BotHitWallEvent:
                                 print("send_intent: bot hit wall event")
                                 self.distanceRemaining = 0
+                                await self.on_hit_wall(e)
                             case Message.ScannedBotEvent:
                                 print("send_intent: scanned bot event")
                                 self.enemySpotted = True
@@ -231,6 +234,10 @@ class BaseBotInternals(ABC):
                             case Message.BotHitBotEvent:
                                 print("send_intent: bot hit bot event")
                                 await self.on_hit_bot(e)
+
+            else:
+                print("send_intent: " + str(event))
+
         except RecursionError:
             print("send_intent: Recursion Error")
             return
@@ -266,8 +273,8 @@ class BaseBotInternals(ABC):
         return str(dataclasses.asdict(data_class, dict_factory=lambda x: {k: v for (k, v) in x if v is not None and v !=
                                                                           ''}))
 
-    async def start(self, url, secret):
-        await self.connect(url, secret)
+    async def start(self, url, secret, bot_name):
+        await self.connect(url, secret, bot_name)
 
     # TODO: assign event to types instead of using json loads
     async def update_movement_simple(self):
@@ -417,11 +424,13 @@ class BaseBotInternals(ABC):
         return self._normalize_relative_angle(direction - json.loads(self.event)['botState']['radarDirection'])
 
     def distance_to(self, xy):
-        return math.hypot(xy['x'] - json.loads(self.event)['botState']['x'], xy['y'] - json.loads(self.event)['botState']['y'])
+        return math.hypot(xy['x'] - json.loads(self.event)['botState']['x'],
+                          xy['y'] - json.loads(self.event)['botState']['y'])
 
-    def bearing_to(self, xy):
+    def direction_to(self, xy):
         return self._normalize_absolute_angle(math.degrees(
-            math.atan2(xy['y'] - json.loads(self.event)['botState']['y'], xy['x'] - json.loads(self.event)['botState']['x'])))
+            math.atan2(xy['y'] - json.loads(self.event)['botState']['y'],
+                       xy['x'] - json.loads(self.event)['botState']['x'])))
 
     def to_infinite_value(self, turn_rate: float) -> float:
         if turn_rate > 0:
@@ -450,6 +459,9 @@ class BaseBotInternals(ABC):
     def on_scanned_bot(self, e):
         pass
 
+    @abstractmethod
+    def on_hit_wall(self, e):
+        pass
 
     @abstractmethod
     def on_hit_bot(self, e):
