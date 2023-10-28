@@ -14,5 +14,8 @@ class BrewBot(Bot):
             await self.fire(1)
             await self.fire(0)  # always turn the gun off after use - only polite.
 
+    async def on_hit_bot(self, e):
+        pass
 
-BrewBot().start_bot('ZDGYJOivwIyqvYQqCP4LOg')
+
+BrewBot().start_bot('Ehs+AK6NdgwbO9jL9TCjfg')

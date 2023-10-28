@@ -15,6 +15,7 @@ class Bot(BaseBotInternals, ABC):
     #  distance remaining and loop the dispatch of the intent until it has gotten where it needs to go
 
     async def reset_to_zero(self):
+        print(self.event)
         match json.loads(self.event)['type']:
             case Message.TickEventForBot:
                 bearing = self.calc_bearing(0)
@@ -136,8 +137,8 @@ class Bot(BaseBotInternals, ABC):
     # TODO: implement this properly
     # wait_for()
 
-    def start_bot(self, secret: str):
+    def start_bot(self, secret: str, bot_name: str):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.start('', secret))
+        loop.run_until_complete(self.start('', secret, bot_name))
         print("Event Loop Done - Disconnecting")

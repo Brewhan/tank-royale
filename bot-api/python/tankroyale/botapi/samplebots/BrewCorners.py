@@ -1,4 +1,6 @@
 import random
+from abc import ABC
+
 from tankroyale.botapi.internal.Bot import Bot
 
 
@@ -7,7 +9,7 @@ def random_corner() -> int:
     return 90 * randint
 
 
-class BrewBot(Bot):
+class BrewBot(Bot, ABC):
     enemies: float
     corner = random_corner()
     stop_when_see_enemy = False
@@ -52,5 +54,11 @@ class BrewBot(Bot):
             await self.fire(3)
         await self.fire(0)
 
+    async def on_hit_bot(self, e):
+        pass
 
-BrewBot().start_bot('ZDGYJOivwIyqvYQqCP4LOg')
+    async def on_hit_wall(self, e):
+        pass
+
+
+BrewBot().start_bot('Ehs+AK6NdgwbO9jL9TCjfg', "BrewCorners")
